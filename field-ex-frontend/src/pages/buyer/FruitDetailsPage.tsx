@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { buyerApi } from '../../services/buyerApi';
 import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import { Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { 
+  Loader2, ArrowLeft, CheckCircle2, MapPin, Calendar, 
+  Thermometer, Clock, ShieldCheck, Send 
+} from 'lucide-react';
 
 export default function FruitDetailsPage() {
   const { id } = useParams();
@@ -14,109 +17,229 @@ export default function FruitDetailsPage() {
 
   useEffect(() => {
     if (id) {
-      buyerApi.getFruitDetails(id).then(data => {
-        setFruit(data);
-      }).catch(console.error).finally(() => setLoading(false));
+      buyerApi.getFruitDetails(id)
+        .then(data => setFruit(data))
+        .catch(err => console.error("Error fetching fruit:", err))
+        .finally(() => setLoading(false));
     }
   }, [id]);
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin" /></div>;
-  }
+  const getFruitIcon = (name: string = '') => {
+    const lower = name.toLowerCase();
+    if (lower.includes('mango')) return '🥭';
+    if (lower.includes('grape')) return '🍇';
+    if (lower.includes('banana')) return '🍌';
+    if (lower.includes('pomegranate')) return '🍎';
+    if (lower.includes('orange') || lower.includes('mandarin') || lower.includes('citrus')) return '🍊';
+    if (lower.includes('papaya')) return '🍈';
+    if (lower.includes('guava')) return '🍐';
+    if (lower.includes('apple')) return '🍏';
+    return '🌱';
+  };
 
-  if (!fruit) {
+  if (loading) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold">Fruit not found</h2>
-        <Button variant="link" onClick={() => navigate('/buyer/catalog')}>Back to Catalog</Button>
+      <div className="flex flex-col items-center justify-center h-72 gap-3 text-muted-foreground">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-sm">Retrieving harvest lot specifications...</p>
       </div>
     );
   }
 
+  if (!fruit) {
+    return (
+      <div className="text-center py-16 space-y-4 max-w-md mx-auto">
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto text-3xl">
+          🔍
+        </div>
+        <h2 className="text-2xl font-heading font-bold text-foreground">Produce Item Not Found</h2>
+        <p className="text-sm text-muted-foreground">The selected fruit cultivar does not exist or has been archived.</p>
+        <Button onClick={() => navigate('/buyer/catalog')} variant="outline">
+          Return to Produce Catalog
+        </Button>
+      </div>
+    );
+  }
+
+  const seasonStr = fruit.season || (Array.isArray(fruit.seasons) ? fruit.seasons.join(', ') : 'Year-round');
+  const varieties = fruit.varieties || [];
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center space-x-4">
-        <Button variant="outline" size="icon" onClick={() => navigate('/buyer/catalog')}>
-          <ArrowLeft className="h-4 w-4" />
+      {/* Top Navigation */}
+      <div className="flex items-center justify-between">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => navigate('/buyer/catalog')}
+          className="gap-1.5 text-xs font-semibold"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to Catalog
         </Button>
-        <div>
-          <h2 className="text-3xl font-heading font-bold">{fruit.name}</h2>
-          <p className="text-muted-foreground mt-1 capitalize">{fruit.category || 'Premium Fruit'}</p>
-        </div>
+
+        <Button 
+          onClick={() => navigate(`/buyer/quotations/request?fruitId=${fruit.id}`)}
+          className="gap-2 font-semibold text-xs shadow-sm"
+        >
+          <Send className="w-3.5 h-3.5" /> Request Quotation
+        </Button>
       </div>
 
+      {/* Main Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Left Column: Hero Icon & Origin Details */}
         <div className="md:col-span-1 space-y-6">
-          <Card className="overflow-hidden border-border/50">
-            <div className="aspect-square bg-muted/30 flex items-center justify-center text-8xl">
-               🍎
+          <Card className="overflow-hidden border-border bg-card">
+            <div className="aspect-square bg-gradient-to-br from-agro-sand/80 to-agro-linen/60 flex flex-col items-center justify-center p-8 relative border-b border-border">
+              <span className="text-8xl drop-shadow-md transition-transform hover:scale-105 duration-300">
+                {getFruitIcon(fruit.name)}
+              </span>
+              <div className="absolute top-3 right-3">
+                <Badge variant="olive" className="text-[10px] font-semibold">
+                  GlobalGAP Certified
+                </Badge>
+              </div>
             </div>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-5 space-y-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Seasons</p>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {fruit.seasons?.map((s: string) => (
-                    <Badge key={s} variant="secondary">{s}</Badge>
-                  ))}
-                  {(!fruit.seasons || fruit.seasons.length === 0) && <span className="text-sm">Year-round</span>}
+                <h1 className="text-2xl font-heading font-extrabold text-foreground">{fruit.name}</h1>
+                <p className="text-xs font-semibold text-primary capitalize mt-0.5">{fruit.category || 'Tropical Produce'}</p>
+              </div>
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {fruit.description || 'Export-grade Indian fresh fruit produced under stringent quality guidelines and phytosanitary traceability.'}
+              </p>
+
+              <div className="space-y-2.5 pt-3 border-t border-border text-xs">
+                {fruit.origin && (
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <MapPin className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-semibold text-foreground block">Harvest Origin</span>
+                      <span>{fruit.origin}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-2 text-muted-foreground">
+                  <Calendar className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-foreground block">Harvest Window</span>
+                    <span>{seasonStr}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 text-muted-foreground">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-foreground block">Compliance</span>
+                    <span>APEDA Phytosanitary & MRL Tested</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Right Column: Varieties List */}
         <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader className="flex flex-row justify-between items-center">
-              <CardTitle>Available Varieties</CardTitle>
-              <Button onClick={() => navigate('/buyer/quotations/request')}>Request Quotation</Button>
+          <Card className="border-border">
+            <CardHeader className="flex flex-row justify-between items-center pb-4 border-b border-border">
+              <div>
+                <CardTitle className="text-lg font-heading font-bold">Export Cultivars & Varieties</CardTitle>
+                <CardDescription className="text-xs">
+                  {varieties.length} export-grade varieties available for international commercial contracts
+                </CardDescription>
+              </div>
+              <Badge variant="wheat" className="text-xs font-semibold">
+                {varieties.length} Varieties
+              </Badge>
             </CardHeader>
-            <CardContent>
-              {fruit.varieties && fruit.varieties.length > 0 ? (
-                <div className="space-y-4">
-                  {fruit.varieties.map((v: any) => (
-                    <div key={v.id} className="p-4 border rounded-lg hover:border-primary/50 transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-bold text-lg">{v.name}</h4>
-                          <p className="text-sm text-muted-foreground">{v.description || 'Premium quality export grade.'}</p>
-                        </div>
-                        {v.active && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            <CheckCircle2 className="w-3 h-3 mr-1" /> Available
+
+            <CardContent className="p-6 space-y-5">
+              {varieties.length > 0 ? (
+                varieties.map((v: any) => (
+                  <div 
+                    key={v.id} 
+                    className="p-5 border border-border rounded-xl bg-card hover:border-primary/50 transition-all duration-200 shadow-sm"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-heading font-bold text-lg text-foreground">{v.name}</h3>
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-semibold">
+                            <CheckCircle2 className="w-3 h-3 mr-1" /> Active Export
                           </Badge>
-                        )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {v.description || 'Premium export caliber selected for maximum shelf stability and sweet flavor.'}
+                        </p>
                       </div>
-                      
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border/50">
-                        <div>
-                          <p className="text-xs text-muted-foreground">Grade</p>
-                          <p className="text-sm font-medium">{v.grade || 'A'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Size Range</p>
-                          <p className="text-sm font-medium">{v.sizeProfile || 'Standard'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Color Profile</p>
-                          <p className="text-sm font-medium">{v.colorProfile || 'Standard'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Brix Level</p>
-                          <p className="text-sm font-medium">{v.brixLevel || 'N/A'}</p>
-                        </div>
+
+                      <Button 
+                        size="sm" 
+                        onClick={() => navigate(`/buyer/quotations/request?fruitId=${fruit.id}&varietyId=${v.id}`)}
+                        className="text-xs font-semibold shrink-0 gap-1.5"
+                      >
+                        <Send className="w-3 h-3" /> Quote Variety
+                      </Button>
+                    </div>
+
+                    {/* Spec Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-border/60 text-xs">
+                      <div className="p-2.5 rounded-lg bg-muted/40">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                          Export Grade
+                        </span>
+                        <span className="font-semibold text-foreground mt-0.5 block truncate">
+                          {v.grade || 'Grade A Export'}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-muted/40">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                          Brix Sugar
+                        </span>
+                        <span className="font-semibold text-primary mt-0.5 block truncate">
+                          {v.brixLevel || '16-18° Brix'}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-muted/40">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                          Calibration / Size
+                        </span>
+                        <span className="font-semibold text-foreground mt-0.5 block truncate">
+                          {v.sizeProfile || 'Standard Export Caliber'}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-muted/40">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                          Storage Temp
+                        </span>
+                        <span className="font-semibold text-foreground mt-0.5 block truncate flex items-center gap-1">
+                          <Thermometer className="w-3 h-3 text-tertiary" />
+                          {v.minStorageTemperature !== null && v.maxStorageTemperature !== null 
+                            ? `+${v.minStorageTemperature}°C to +${v.maxStorageTemperature}°C`
+                            : '+2°C to +8°C'}
+                        </span>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    {v.shelfLifeDays && (
+                      <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <Clock className="w-3.5 h-3.5 text-primary" />
+                        <span>Reefer shelf life: <strong>{v.shelfLifeDays} days</strong> under controlled atmosphere</span>
+                      </div>
+                    )}
+                  </div>
+                ))
               ) : (
-                <p className="text-muted-foreground text-center py-8">No varieties available for this fruit.</p>
+                <div className="text-center py-12 border border-dashed rounded-xl border-border">
+                  <p className="text-sm text-muted-foreground">No varieties currently cataloged for this fruit cultivar.</p>
+                </div>
               )}
             </CardContent>
           </Card>

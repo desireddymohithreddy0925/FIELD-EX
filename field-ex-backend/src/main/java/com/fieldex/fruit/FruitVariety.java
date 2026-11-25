@@ -37,4 +37,19 @@ public class FruitVariety extends BaseEntity {
 
     @Column(name = "max_storage_temperature")
     private Double maxStorageTemperature;
+
+    @Column(name = "grade")
+    private String grade;
+
+    @Column(name = "brix_level")
+    private String brixLevel;
+
+    @Column(name = "size_profile")
+    private String sizeProfile;
+
+    @Column(name = "color_profile")
+    private String colorProfile;
+
+    @Column(name = "description", columnDefinition = "text")
+    private String description;
 }

@@ -57,11 +57,17 @@ export function LoginPage() {
         }
       }, 100)
     } catch (err: any) {
-      const errorMsg =
+      let errorMsg =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        err.response?.data?.email ||
-        "Invalid credentials. Please verify username and password."
+        err.response?.data?.email
+      if (!errorMsg) {
+        if (!err.response || err.code === "ERR_NETWORK" || err.message?.includes("Network Error")) {
+          errorMsg = "Unable to connect to FIELD-EX backend (http://localhost:8080). Please ensure the backend server is running."
+        } else {
+          errorMsg = "Invalid credentials. Please verify username and password."
+        }
+      }
       setError(errorMsg)
     } finally {
       setIsLoading(false)
