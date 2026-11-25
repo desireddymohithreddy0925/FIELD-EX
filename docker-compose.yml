@@ -1,0 +1,167 @@
+services:
+  frontend:
+    build: 
+      context: ./field-ex-frontend
+      dockerfile: Dockerfile
+    container_name: field-ex-frontend
+    ports:
+      - "80:80"
+    networks:
+      - field-ex-net
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./field-ex-backend
+      dockerfile: Dockerfile
+    container_name: field-ex-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/fieldex
+      - SPRING_DATASOURCE_USERNAME=fieldex_user
+      - SPRING_DATASOURCE_PASSWORD=fieldex_password
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - MINIO_URL=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - SPRING_MAIL_HOST=mailpit
+      - SPRING_MAIL_PORT=1025
+      - JWT_SECRET=VmVyeVNlY3VyZVNlY3JldEtleUZvckpXVFRva2VuR2VuZXJhdGlvbjEyMzQ1Njc4
+    networks:
+      - field-ex-net
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  db:
+    image: postgres:15-alpine
+    container_name: field-ex-db
+    environment:
+      POSTGRES_USER: fieldex_user
+      POSTGRES_PASSWORD: fieldex_password
+      POSTGRES_DB: fieldex
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - field-ex-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fieldex_user -d fieldex"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: field-ex-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@field-ex.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - field-ex-net
+    restart: unless-stopped
+    depends_on:
+      - db
+
+  redis:
+    image: redis:7-alpine
+    container_name: field-ex-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - field-ex-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio
+    container_name: field-ex-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - field-ex-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: field-ex-mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - field-ex-net
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: field-ex-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./field-ex-backend/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - field-ex-net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.0.3
+    container_name: field-ex-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./field-ex-backend/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - field-ex-net
+    restart: unless-stopped
+
+networks:
+  field-ex-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  prometheus_data:
+  grafana_data:

@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Off-white and Agro-based Tertiary Color Palette */
+    --background: 40 28% 97.2%; /* #FAF8F5 Warm Alabaster Off-White */
+    --foreground: 138 15% 13.5%; /* #1C261F Deep Agro Charcoal */
+    --card: 45 25% 99.2%; /* #FCFBF9 Clean Parchment Pearl */
+    --card-foreground: 138 15% 13.5%;
+    --popover: 45 25% 99.2%;
+    --popover-foreground: 138 15% 13.5%;
+    
+    /* Primary: Deep Highland Agro Pine */
+    --primary: 138 30% 21.5%; /* #26462F */
+    --primary-foreground: 40 30% 97.5%;
+    
+    /* Secondary: Sun-Baked Terracotta / Warm Clay */
+    --secondary: 24 51% 43.5%; /* #A66236 */
+    --secondary-foreground: 40 30% 98.5%;
+
+    /* Tertiary: Olive Moss / Wild Botanical */
+    --tertiary: 85 29% 33%; /* #586C3C */
+    --tertiary-foreground: 40 30% 97.5%;
+    
+    /* Muted: Gentle Oat & Barley Linen */
+    --muted: 40 24% 92%; /* #F0ECE4 */
+    --muted-foreground: 130 8% 41%; /* #617063 */
+    
+    /* Accent: Soft Sage Straw */
+    --accent: 78 22% 91%; /* #E9EDE2 */
+    --accent-foreground: 138 30% 21.5%;
+    
+    /* System & Borders */
+    --destructive: 8 68% 46%; /* #C43B2A Earth Brick */
+    --destructive-foreground: 40 30% 98%;
+    --border: 38 18% 86.5%; /* #E3DCD2 Warm Oat Line */
+    --input: 38 18% 86.5%;
+    --ring: 85 29% 33%; /* Olive Moss Focus Ring */
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 145 16% 9.5%; /* #131A15 Midnight Forest Canopy */
+    --foreground: 40 25% 94%; /* #F4F1EA Warm Cream White */
+    --card: 145 14% 12.5%; /* #1A231C */
+    --card-foreground: 40 25% 94%;
+    --popover: 145 14% 12.5%;
+    --popover-foreground: 40 25% 94%;
+    
+    --primary: 138 28% 44%; /* #4E865E Lush Sage */
+    --primary-foreground: 145 16% 9.5%;
+    
+    --secondary: 24 48% 54%; /* #C37A4B Terracotta Glow */
+    --secondary-foreground: 40 30% 98%;
+
+    --tertiary: 85 30% 45%; /* #7A9355 Lichen Olive */
+    --tertiary-foreground: 145 16% 9.5%;
+    
+    --muted: 145 12% 16.5%; /* #222C24 */
+    --muted-foreground: 130 10% 64%; /* #97A699 */
+    
+    --accent: 145 14% 18%;
+    --accent-foreground: 40 25% 94%;
+    
+    --destructive: 8 60% 40%;
+    --destructive-foreground: 40 30% 98%;
+    --border: 145 10% 21%;
+    --input: 145 10% 21%;
+    --ring: 85 30% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Custom premium scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Subtle organic card highlight */
+.agro-card {
+  @apply bg-card border border-border shadow-[0_2px_10px_-3px_rgba(40,55,42,0.05)] transition-all duration-200;
+}
+.agro-card:hover {
+  @apply shadow-[0_8px_24px_-6px_rgba(40,55,42,0.09)] border-[#D4CCA];
+}
+
+/* Warm badge styles */
+.badge-agro-olive {
+  @apply bg-[#EBF1E6] text-[#475730] border-[#D4E0CC];
+}
+.badge-agro-clay {
+  @apply bg-[#F7ECE4] text-[#8C4A21] border-[#EED4C3];
+}
+.badge-agro-wheat {
+  @apply bg-[#FAF3E5] text-[#8F681C] border-[#F2E3C2];
+}
+.badge-agro-forest {
+  @apply bg-[#E7EFEA] text-[#1E3B27] border-[#CEE0D4];
+}
