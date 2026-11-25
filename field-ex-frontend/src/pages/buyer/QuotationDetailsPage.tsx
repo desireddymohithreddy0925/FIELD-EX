@@ -216,10 +216,17 @@ export default function QuotationDetailsPage() {
             )}
             
             {quotation.status === 'ACCEPTED' && (
-              <CardFooter className="border-t p-6 bg-green-50 justify-center">
+              <CardFooter className="border-t p-6 bg-green-50 flex flex-col gap-3 items-center justify-center">
                 <p className="text-sm text-green-700 text-center font-medium flex items-center">
                   <Check className="w-4 h-4 mr-2" /> Quotation Accepted. Order created.
                 </p>
+                <Button 
+                  size="sm" 
+                  className="bg-green-700 hover:bg-green-800 text-white"
+                  onClick={() => navigate('/buyer/orders')}
+                >
+                  View in Orders Portal
+                </Button>
               </CardFooter>
             )}
           </Card>

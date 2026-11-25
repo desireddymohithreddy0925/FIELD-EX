@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -10,16 +10,25 @@ import { Plus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
 
 export default function RequestQuotationPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialFruitId = searchParams.get('fruitId') || '';
   const [loading, setLoading] = useState(false);
   const [fruits, setFruits] = useState<any[]>([]);
-  const [items, setItems] = useState([{ fruitId: '', varietyId: '', quantity: 1000 }]);
+  const [items, setItems] = useState([{ fruitId: initialFruitId, varietyId: '', quantity: 1000 }]);
 
   useEffect(() => {
     // Fetch active catalog
     buyerApi.getFruits({ size: 100 }).then(data => {
-      setFruits(data.content);
+      const list = data?.content || (Array.isArray(data) ? data : []);
+      setFruits(list);
+      if (initialFruitId && list.length > 0) {
+        const found = list.find((f: any) => f.id === initialFruitId);
+        if (found && found.varieties?.length > 0) {
+          setItems([{ fruitId: initialFruitId, varietyId: found.varieties[0].id, quantity: 1000 }]);
+        }
+      }
     }).catch(console.error);
-  }, []);
+  }, [initialFruitId]);
 
   const handleAddItem = () => {
     setItems([...items, { fruitId: '', varietyId: '', quantity: 1000 }]);

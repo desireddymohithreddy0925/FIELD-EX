@@ -1,6 +1,6 @@
-import { Outlet, NavLink, Link } from "react-router-dom"
+import { Outlet, NavLink, Link, useLocation } from "react-router-dom"
 import type { LucideIcon } from "lucide-react"
-import { LogOut, Sprout, Shield, ArrowUpRight, ChevronRight } from "lucide-react"
+import { LogOut, Sprout, Shield, ArrowUpRight, ChevronRight, Home } from "lucide-react"
 import { useAuth } from "../../context/AuthContext"
 import { Badge } from "../ui/badge"
 
@@ -15,9 +15,45 @@ interface AppLayoutProps {
   title: string
 }
 
+function formatSegment(segment: string): string {
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment)) {
+    return "Details"
+  }
+  if (/^\d+$/.test(segment)) return `#${segment}`
+  return segment
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
+
 export function AppLayout({ navItems, title }: AppLayoutProps) {
   const { logout, roles } = useAuth()
+  const { pathname } = useLocation()
   const primaryRole = roles[0] || title.toUpperCase()
+
+  const segments = pathname.split("/").filter(Boolean)
+  const portalBasePath = segments.length > 0 ? `/${segments[0]}` : "/"
+  const matchedNavItem = navItems.find((item) => item.path === pathname)
+  const extraSegments = segments.slice(1)
+
+  const breadcrumbs: { label: string; to?: string }[] = [
+    { label: "FIELD-EX", to: "/" },
+    { label: `${title} Portal`, to: portalBasePath },
+  ]
+
+  if (matchedNavItem) {
+    breadcrumbs.push({ label: matchedNavItem.name })
+  } else if (extraSegments.length > 0) {
+    extraSegments.forEach((segment, idx) => {
+      const targetPath = `/${segments.slice(0, idx + 2).join("/")}`
+      const navMatch = navItems.find((item) => item.path === targetPath)
+      const isLast = idx === extraSegments.length - 1
+      breadcrumbs.push({
+        label: navMatch ? navMatch.name : formatSegment(segment),
+        to: isLast ? undefined : targetPath,
+      })
+    })
+  }
 
   return (
     <div className="flex h-screen bg-background font-sans text-foreground antialiased selection:bg-tertiary/20 selection:text-foreground">
@@ -122,17 +158,41 @@ export function AppLayout({ navItems, title }: AppLayoutProps) {
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto flex flex-col bg-background">
         {/* Top Sticky Header */}
-        <header className="sticky top-0 z-10 h-16 border-b border-border bg-card/85 backdrop-blur-md px-8 flex items-center justify-between shadow-soft">
-          <div className="flex items-center gap-3 text-sm">
-            <span className="text-muted-foreground font-medium">FIELD-EX</span>
-            <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
-            <span className="font-heading font-semibold text-foreground capitalize">{title} Portal</span>
-          </div>
+        <header className="sticky top-0 z-10 min-h-16 border-b border-border bg-card/85 backdrop-blur-md px-6 sm:px-8 py-2.5 flex items-center justify-between gap-4 shadow-soft">
+          <nav aria-label="Breadcrumb" className="min-w-0">
+            <ol className="flex flex-wrap items-center gap-1.5 text-sm">
+              {breadcrumbs.map((crumb, index) => {
+                const isLast = index === breadcrumbs.length - 1
+                return (
+                  <li key={`${crumb.label}-${index}`} className="flex items-center gap-1.5 min-w-0">
+                    {index > 0 && (
+                      <ChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/50" aria-hidden="true" />
+                    )}
+                    {isLast || !crumb.to ? (
+                      <span
+                        aria-current="page"
+                        className="font-heading font-semibold text-foreground px-2.5 py-1 rounded-md bg-muted/60 border border-border/60 truncate"
+                      >
+                        {crumb.label}
+                      </span>
+                    ) : (
+                      <Link
+                        to={crumb.to}
+                        className="text-muted-foreground font-medium hover:text-foreground px-1.5 py-0.5 rounded-md hover:bg-muted/60 transition-colors truncate"
+                      >
+                        {crumb.label}
+                      </Link>
+                    )}
+                  </li>
+                )
+              })}
+            </ol>
+          </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 shrink-0">
             {/* System Status Pill */}
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/60 border border-border text-xs text-foreground font-medium shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" aria-hidden="true" />
               <span className="text-muted-foreground">Cold-Chain Telemetry:</span>
               <span className="text-primary font-semibold">Online (99.8%)</span>
             </div>
@@ -140,9 +200,10 @@ export function AppLayout({ navItems, title }: AppLayoutProps) {
             {/* Quick Public Link */}
             <Link 
               to="/" 
-              className="text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors flex items-center gap-1"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full border border-border bg-background/80 hover:bg-muted transition-colors"
             >
-              Home
+              <Home className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Home</span>
             </Link>
           </div>
         </header>

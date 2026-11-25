@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { Loader2, Search, Sprout, ArrowRight } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
+import { getFruitMedia } from '../../utils/fruitMedia';
 
 export default function CatalogPage() {
   const navigate = useNavigate();
@@ -33,17 +34,6 @@ export default function CatalogPage() {
     f.name.toLowerCase().includes(search.toLowerCase()) || 
     f.category?.toLowerCase().includes(search.toLowerCase())
   );
-
-  const getFruitIcon = (name: string) => {
-    const lower = name.toLowerCase();
-    if (lower.includes('mango')) return '🥭';
-    if (lower.includes('grape')) return '🍇';
-    if (lower.includes('banana')) return '🍌';
-    if (lower.includes('pomegranate')) return '🍎';
-    if (lower.includes('orange') || lower.includes('citrus')) return '🍊';
-    if (lower.includes('guava') || lower.includes('papaya')) return '🍈';
-    return '🌱';
-  };
 
   return (
     <div className="space-y-8">
@@ -78,64 +68,79 @@ export default function CatalogPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredFruits.map(fruit => (
-            <Card 
-              key={fruit.id} 
-              className="overflow-hidden cursor-pointer hover:shadow-card transition-all duration-200 group border-border bg-card flex flex-col justify-between"
-              onClick={() => navigate(`/buyer/catalog/${fruit.id}`)}
-            >
-              <div>
-                <div className="aspect-[4/3] bg-gradient-to-br from-agro-sand/80 to-agro-linen/60 flex items-center justify-center p-6 relative border-b border-border/60">
-                  <span className="text-6xl drop-shadow-sm group-hover:scale-110 transition-transform duration-200">
-                    {getFruitIcon(fruit.name)}
-                  </span>
-                  <div className="absolute top-3 right-3">
-                    <Badge variant="olive" className="text-[10px] font-semibold">
-                      Export Grade
-                    </Badge>
+          {filteredFruits.map(fruit => {
+            const media = getFruitMedia(fruit.name);
+            return (
+              <Card 
+                key={fruit.id} 
+                className="overflow-hidden cursor-pointer hover:shadow-card transition-all duration-200 group border-border bg-card flex flex-col justify-between"
+                onClick={() => navigate(`/buyer/catalog/${fruit.id}`)}
+              >
+                <div>
+                  <div className="aspect-[4/3] relative overflow-hidden bg-muted border-b border-border/60">
+                    <img
+                      src={media.image}
+                      alt={media.alt}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/25 pointer-events-none" />
+                    <div className="absolute top-3 right-3">
+                      <Badge variant="olive" className="text-[10px] font-semibold shadow-sm bg-black/60 text-white backdrop-blur-sm border-white/20">
+                        {media.grade || 'Export Grade'}
+                      </Badge>
+                    </div>
+                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px] text-white">
+                      <span className="font-semibold bg-black/55 px-2 py-0.5 rounded backdrop-blur-sm">
+                        {fruit.origin ? fruit.origin.split(',')[0] : media.origin.split(',')[0]}
+                      </span>
+                      <span className="font-semibold bg-primary/90 text-primary-foreground px-2 py-0.5 rounded backdrop-blur-sm text-[10px]">
+                        {media.highlight}
+                      </span>
+                    </div>
                   </div>
+
+                  <CardContent className="p-5">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-heading font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+                          {fruit.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground capitalize mt-0.5">
+                          {fruit.category || 'Agricultural Crop'}
+                        </p>
+                      </div>
+                      <Badge variant="wheat" className="text-[10px] shrink-0 font-medium">
+                        {fruit.varieties?.length || 0} varieties
+                      </Badge>
+                    </div>
+                    
+                    {fruit.seasons && fruit.seasons.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-1.5">
+                        {fruit.seasons.slice(0, 2).map((s: string) => (
+                          <span key={s} className="px-2 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+                            {s}
+                          </span>
+                        ))}
+                        {fruit.seasons.length > 2 && (
+                          <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+                            +{fruit.seasons.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
                 </div>
 
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-heading font-bold text-lg text-foreground group-hover:text-primary transition-colors">
-                        {fruit.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground capitalize mt-0.5">
-                        {fruit.category || 'Agricultural Crop'}
-                      </p>
-                    </div>
-                    <Badge variant="wheat" className="text-[10px] shrink-0 font-medium">
-                      {fruit.varieties?.length || 0} varieties
-                    </Badge>
-                  </div>
-                  
-                  {fruit.seasons && fruit.seasons.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {fruit.seasons.slice(0, 2).map((s: string) => (
-                        <span key={s} className="px-2 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border">
-                          {s}
-                        </span>
-                      ))}
-                      {fruit.seasons.length > 2 && (
-                        <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border">
-                          +{fruit.seasons.length - 2}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </div>
-
-              <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-border/60 text-xs">
-                <span className="text-muted-foreground font-medium">Brix & QC Pre-tested</span>
-                <span className="font-semibold text-primary group-hover:text-secondary flex items-center gap-1 transition-colors">
-                  Details <ArrowRight className="w-3.5 h-3.5" />
-                </span>
-              </div>
-            </Card>
-          ))}
+                <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-border/60 text-xs">
+                  <span className="text-muted-foreground font-medium">Brix & QC Pre-tested</span>
+                  <span className="font-semibold text-primary group-hover:text-secondary flex items-center gap-1 transition-colors">
+                    Details <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </Card>
+            );
+          })}
 
           {filteredFruits.length === 0 && (
             <div className="col-span-full py-16 text-center text-muted-foreground border rounded-2xl border-dashed border-border bg-card">

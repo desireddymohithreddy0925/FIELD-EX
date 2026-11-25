@@ -92,7 +92,7 @@ function App() {
               </Route>
 
               {/* Buyer Routes */}
-              <Route element={<RoleRoute allowedRoles={['BUYER']} />}>
+              <Route element={<RoleRoute allowedRoles={['BUYER', 'ADMIN', 'MANAGER']} />}>
                 <Route path="/buyer" element={<BuyerLayout />}>
                   <Route index element={<DashboardPage />} />
                   <Route path="profile" element={<CompanyProfilePage />} />
@@ -107,11 +107,15 @@ function App() {
                   <Route path="customs" element={<CustomsPage />} />
                   <Route path="documents" element={<DocumentsPage />} />
                   <Route path="notifications" element={<NotificationsPage />} />
+                  {/* Convenient aliases & fallback */}
+                  <Route path="rfq" element={<Navigate to="/buyer/quotations/request" replace />} />
+                  <Route path="quotes" element={<Navigate to="/buyer/quotations" replace />} />
+                  <Route path="*" element={<Navigate to="/buyer" replace />} />
                 </Route>
               </Route>
 
               {/* Engineer Routes */}
-              <Route element={<RoleRoute allowedRoles={['ENGINEER']} />}>
+              <Route element={<RoleRoute allowedRoles={['ENGINEER', 'ADMIN']} />}>
                 <Route path="/engineer" element={<EngineerLayout />}>
                   <Route index element={<EngineerDashboard />} />
                   <Route path="suppliers" element={<PlaceholderPage name="Suppliers" />} />
@@ -120,11 +124,12 @@ function App() {
                   <Route path="warehouses" element={<PlaceholderPage name="Warehouses" />} />
                   <Route path="inventory" element={<PlaceholderPage name="Inventory" />} />
                   <Route path="operations" element={<PlaceholderPage name="Operations" />} />
+                  <Route path="*" element={<Navigate to="/engineer" replace />} />
                 </Route>
               </Route>
 
               {/* QC Inspector Routes */}
-              <Route element={<RoleRoute allowedRoles={['QC_INSPECTOR']} />}>
+              <Route element={<RoleRoute allowedRoles={['QC_INSPECTOR', 'ADMIN']} />}>
                 <Route path="/qc" element={<QcLayout />}>
                   <Route index element={<QcDashboard />} />
                   <Route path="inspections" element={<PlaceholderPage name="Inspections" />} />
@@ -132,11 +137,12 @@ function App() {
                   <Route path="failed-batches" element={<PlaceholderPage name="Failed Batches" />} />
                   <Route path="reinspection" element={<PlaceholderPage name="Reinspection" />} />
                   <Route path="history" element={<PlaceholderPage name="Quality History" />} />
+                  <Route path="*" element={<Navigate to="/qc" replace />} />
                 </Route>
               </Route>
 
               {/* Logistics Routes */}
-              <Route element={<RoleRoute allowedRoles={['LOGISTICS']} />}>
+              <Route element={<RoleRoute allowedRoles={['LOGISTICS', 'ADMIN']} />}>
                 <Route path="/logistics" element={<LogisticsLayout />}>
                   <Route index element={<LogisticsDashboard />} />
                   <Route path="warehouse" element={<PlaceholderPage name="Warehouse" />} />
@@ -145,11 +151,12 @@ function App() {
                   <Route path="customs" element={<PlaceholderPage name="Customs" />} />
                   <Route path="delayed-shipments" element={<PlaceholderPage name="Delayed Shipments" />} />
                   <Route path="delivery" element={<PlaceholderPage name="Delivery" />} />
+                  <Route path="*" element={<Navigate to="/logistics" replace />} />
                 </Route>
               </Route>
 
               {/* Manager Routes */}
-              <Route element={<RoleRoute allowedRoles={['MANAGER']} />}>
+              <Route element={<RoleRoute allowedRoles={['MANAGER', 'ADMIN']} />}>
                 <Route path="/manager" element={<ManagerLayout />}>
                   <Route index element={<ManagerDashboard />} />
                   <Route path="orders" element={<PlaceholderPage name="Operations Orders" />} />
@@ -160,11 +167,12 @@ function App() {
                   <Route path="shipments" element={<PlaceholderPage name="Logistics Shipments" />} />
                   <Route path="customs" element={<PlaceholderPage name="Customs Clearance" />} />
                   <Route path="analytics" element={<PlaceholderPage name="Operational Analytics" />} />
+                  <Route path="*" element={<Navigate to="/manager" replace />} />
                 </Route>
               </Route>
 
               {/* Editor Routes */}
-              <Route element={<RoleRoute allowedRoles={['EDITOR']} />}>
+              <Route element={<RoleRoute allowedRoles={['EDITOR', 'ADMIN']} />}>
                 <Route path="/editor" element={<EditorLayout />}>
                   <Route index element={<EditorDashboard />} />
                   <Route path="catalog" element={<PlaceholderPage name="Produce Catalog Editor" />} />
@@ -172,6 +180,7 @@ function App() {
                   <Route path="suppliers" element={<PlaceholderPage name="Supplier Network" />} />
                   <Route path="batches" element={<PlaceholderPage name="Harvest Batches" />} />
                   <Route path="packaging" element={<PlaceholderPage name="Packaging Protocols" />} />
+                  <Route path="*" element={<Navigate to="/editor" replace />} />
                 </Route>
               </Route>
 

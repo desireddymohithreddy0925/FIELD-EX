@@ -76,6 +76,9 @@ export default {
         sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
         heading: ["Hanken Grotesk", "Inter", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
+        lato: ["Lato", "Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        crimson: ["Crimson Pro", "Georgia", "serif"],
+        spline: ["Spline Sans Mono", "JetBrains Mono", "monospace"],
       },
       boxShadow: {
         soft: "0 2px 12px -2px rgba(36, 50, 38, 0.06)",
