@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { buyerApi } from '../../services/buyerApi';
 import { adminApi } from '../../services/adminApi';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/auth-context';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -27,6 +27,37 @@ export default function OrderDetailsPage() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const fetchOrderDetails = useCallback(async (silent = false) => {
+    try {
+      if (!id) return;
+      const orderData = await buyerApi.getOrderDetails(id);
+      setOrder(orderData);
+
+      try {
+        const docs = await buyerApi.getOrderDocuments(id);
+        setDocuments(Array.isArray(docs) ? docs : []);
+      } catch {
+        // Documents not generated yet or access not ready
+      }
+
+      try {
+        const shipData = await buyerApi.getOrderShipments(id);
+        if (shipData && shipData.id) {
+          setShipment(shipData);
+        }
+      } catch {
+        // Shipment not created yet
+      }
+    } catch (err) {
+      if (!silent) {
+        console.error(err);
+        alert('Failed to load order details');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   const handleAcceptOrReject = async (action: 'ACCEPT' | 'REJECT') => {
     if (!order) return;
@@ -70,42 +101,17 @@ export default function OrderDetailsPage() {
   };
 
   useEffect(() => {
-    fetchOrderDetails(false);
-    const timer = setInterval(() => fetchOrderDetails(true), 4000);
-    return () => clearInterval(timer);
-  }, [id]);
-
-  const fetchOrderDetails = async (silent = false) => {
-    try {
-      if (!id) return;
-      if (!silent) setLoading(true);
-      const orderData = await buyerApi.getOrderDetails(id);
-      setOrder(orderData);
-
-      try {
-        const docs = await buyerApi.getOrderDocuments(id);
-        setDocuments(Array.isArray(docs) ? docs : []);
-      } catch (e) {
-        // Documents not generated yet or access not ready
-      }
-
-      try {
-        const shipData = await buyerApi.getOrderShipments(id);
-        if (shipData && shipData.id) {
-          setShipment(shipData);
-        }
-      } catch (e) {
-        // Shipment not created yet
-      }
-    } catch (err) {
-      if (!silent) {
-        console.error(err);
-        alert('Failed to load order details');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    const initTimer = setTimeout(() => {
+      void fetchOrderDetails(false);
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchOrderDetails(true);
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchOrderDetails]);
 
   if (loading) {
     return (

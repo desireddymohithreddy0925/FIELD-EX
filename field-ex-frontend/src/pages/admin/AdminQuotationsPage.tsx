@@ -48,9 +48,7 @@ export default function AdminQuotationsPage() {
     return null;
   }, [fruits]);
 
-  const fetchData = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    setIsSyncing(true);
+  const fetchData = useCallback(async (silent = false) => {
     try {
       const [qData, catalogData] = await Promise.all([
         adminApi.getAllQuotations(),
@@ -69,21 +67,30 @@ export default function AdminQuotationsPage() {
       setIsLoading(false);
       setIsSyncing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchData(false);
-  }, []);
+    const initTimer = setTimeout(() => {
+      void fetchData(false);
+    }, 0);
+    return () => clearTimeout(initTimer);
+  }, [fetchData]);
 
   // Real-time 4-second live sync (paused while modal is open so admin price edits aren't overwritten)
   useEffect(() => {
     const timer = setInterval(() => {
       if (!selectedQuote) {
-        fetchData(true);
+        void fetchData(true);
       }
     }, 4000);
     return () => clearInterval(timer);
-  }, [selectedQuote]);
+  }, [selectedQuote, fetchData]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setIsSyncing(true);
+    void fetchData(false);
+  };
 
   const openPricingModal = (quote: any) => {
     setSelectedQuote(quote);
@@ -228,7 +235,7 @@ export default function AdminQuotationsPage() {
           </p>
         </div>
 
-        <Button variant="outline" size="sm" onClick={() => fetchData(false)} disabled={isLoading || isSyncing} className="gap-2">
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading || isSyncing} className="gap-2">
           <RefreshCw className={`w-3.5 h-3.5 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
           Sync Now
         </Button>

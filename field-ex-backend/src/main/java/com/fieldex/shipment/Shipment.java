@@ -1,5 +1,6 @@
 package com.fieldex.shipment;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fieldex.common.entity.BaseEntity;
 import com.fieldex.order.Order;
 import jakarta.persistence.*;
@@ -21,6 +22,7 @@ import org.hibernate.envers.Audited;
 @Builder
 public class Shipment extends BaseEntity {
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
@@ -56,6 +58,7 @@ public class Shipment extends BaseEntity {
     @Column(name = "actual_delivery")
     private OffsetDateTime actualDelivery;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "shipment", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ShipmentItem> items = new ArrayList<>();

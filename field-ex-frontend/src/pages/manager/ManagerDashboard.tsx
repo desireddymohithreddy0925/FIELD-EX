@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { 
@@ -17,7 +17,7 @@ export default function ManagerDashboard() {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const data = await adminApi.getAllOrders();
       const list = Array.isArray(data) ? data : (data?.content || []);
@@ -28,13 +28,25 @@ export default function ManagerDashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 4000);
-    return () => clearInterval(interval);
-  }, []);
+    const initTimer = setTimeout(() => {
+      void fetchOrders();
+    }, 0);
+    const interval = setInterval(() => {
+      void fetchOrders();
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(interval);
+    };
+  }, [fetchOrders]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    void fetchOrders();
+  };
 
   const handleQuickAccept = async (orderId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -107,7 +119,7 @@ export default function ManagerDashboard() {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={fetchOrders} 
+            onClick={handleRefresh} 
             disabled={isLoading}
             className="text-xs gap-1.5"
           >

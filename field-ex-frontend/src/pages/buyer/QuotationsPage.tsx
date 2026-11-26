@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buyerApi } from '../../services/buyerApi';
 import { Button } from '../../components/ui/button';
@@ -13,15 +13,8 @@ export default function QuotationsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
-  useEffect(() => {
-    fetchQuotations(false);
-    const timer = setInterval(() => fetchQuotations(true), 4000);
-    return () => clearInterval(timer);
-  }, [statusFilter]);
-
-  const fetchQuotations = async (silent = false) => {
+  const fetchQuotations = useCallback(async (silent = false) => {
     try {
-      if (!silent) setLoading(true);
       const statusParam = statusFilter === 'ALL' ? undefined : statusFilter;
       const data = await buyerApi.getQuotations(0, 50, statusParam);
       setQuotations(data?.content || (Array.isArray(data) ? data : []));
@@ -30,7 +23,20 @@ export default function QuotationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
+
+  useEffect(() => {
+    const initTimer = setTimeout(() => {
+      void fetchQuotations(false);
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchQuotations(true);
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchQuotations]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

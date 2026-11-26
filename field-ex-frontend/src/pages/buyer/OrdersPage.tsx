@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buyerApi } from '../../services/buyerApi';
 import { Button } from '../../components/ui/button';
@@ -13,15 +13,8 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
-  useEffect(() => {
-    fetchOrders(false);
-    const timer = setInterval(() => fetchOrders(true), 4000);
-    return () => clearInterval(timer);
-  }, [statusFilter]);
-
-  const fetchOrders = async (silent = false) => {
+  const fetchOrders = useCallback(async (silent = false) => {
     try {
-      if (!silent) setLoading(true);
       const statusParam = statusFilter === 'ALL' ? undefined : statusFilter;
       const data = await buyerApi.getOrders(0, 50, statusParam);
       const orderList = Array.isArray(data) ? data : (data?.content || []);
@@ -31,7 +24,20 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
+
+  useEffect(() => {
+    const initTimer = setTimeout(() => {
+      void fetchOrders(false);
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchOrders(true);
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchOrders]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

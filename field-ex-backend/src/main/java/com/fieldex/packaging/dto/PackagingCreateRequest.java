@@ -28,6 +28,5 @@ public class PackagingCreateRequest {
     private String notes;
 
     @NotEmpty(message = "Packaging items are required")
-    @Valid
-    private List<PackagingItemRequest> items;
+    private List<@Valid PackagingItemRequest> items;
 }

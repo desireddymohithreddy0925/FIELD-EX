@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Users, Truck, ShieldCheck, Warehouse, FileText, Anchor, Sprout, ArrowRight, UserCheck, Activity, RefreshCw, Globe } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -14,8 +14,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-  const fetchLiveDashboardData = async () => {
-    setIsLoading(true);
+  const fetchLiveDashboardData = useCallback(async () => {
     try {
       const [logsData, usersData, ordersData] = await Promise.all([
         adminApi.getRecentAuditLogs().catch(() => []),
@@ -31,13 +30,25 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchLiveDashboardData();
-    const timer = setInterval(fetchLiveDashboardData, 4000);
-    return () => clearInterval(timer);
-  }, []);
+    const initTimer = setTimeout(() => {
+      void fetchLiveDashboardData();
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchLiveDashboardData();
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchLiveDashboardData]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    void fetchLiveDashboardData();
+  };
 
   const activeBuyers = users.filter(u => u.role === 'BUYER');
   const activeOrders = orders.filter(o => o.status !== 'DELIVERED' && o.status !== 'CANCELLED');
@@ -82,7 +93,7 @@ export default function AdminDashboard() {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={fetchLiveDashboardData} 
+            onClick={handleRefresh} 
             disabled={isLoading}
             className="text-xs gap-1.5"
           >
@@ -281,7 +292,7 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchLiveDashboardData} disabled={isLoading} className="gap-1.5 text-xs">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading} className="gap-1.5 text-xs">
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh Feed
           </Button>

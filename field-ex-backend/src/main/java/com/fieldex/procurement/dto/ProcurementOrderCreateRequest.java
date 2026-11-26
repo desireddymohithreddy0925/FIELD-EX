@@ -34,6 +34,5 @@ public class ProcurementOrderCreateRequest {
     private String notes;
 
     @NotEmpty(message = "Procurement items cannot be empty")
-    @Valid
-    private List<ProcurementItemCreateRequest> items;
+    private List<@Valid ProcurementItemCreateRequest> items;
 }

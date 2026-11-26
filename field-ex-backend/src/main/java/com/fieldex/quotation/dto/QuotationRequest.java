@@ -9,6 +9,5 @@ import java.util.List;
 @Data
 public class QuotationRequest {
     @NotEmpty
-    @Valid
-    private List<QuotationItemRequest> items;
+    private List<@Valid QuotationItemRequest> items;
 }

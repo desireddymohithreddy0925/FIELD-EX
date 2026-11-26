@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buyerApi } from '../../services/buyerApi';
 import { Card, CardContent } from '../../components/ui/card';
@@ -15,15 +15,8 @@ export default function CatalogPage() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
-  useEffect(() => {
-    fetchCatalog(false);
-    const timer = setInterval(() => fetchCatalog(true), 4000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const fetchCatalog = async (silent = false) => {
+  const fetchCatalog = useCallback(async (silent = false) => {
     try {
-      if (!silent) setLoading(true);
       const data = await buyerApi.getFruits({ size: 100 });
       setFruits(data?.content || (Array.isArray(data) ? data : []));
     } catch (err) {
@@ -31,7 +24,20 @@ export default function CatalogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const initTimer = setTimeout(() => {
+      void fetchCatalog(false);
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchCatalog(true);
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchCatalog]);
 
   const categories = ['ALL', ...Array.from(new Set(fruits.map(f => f.category).filter(Boolean)))];
 

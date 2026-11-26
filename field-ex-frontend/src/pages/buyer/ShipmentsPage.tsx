@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buyerApi } from '../../services/buyerApi';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -11,15 +11,8 @@ export default function ShipmentsPage() {
   const [shipments, setShipments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchShipments(false);
-    const timer = setInterval(() => fetchShipments(true), 4000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const fetchShipments = async (silent = false) => {
+  const fetchShipments = useCallback(async (silent = false) => {
     try {
-      if (!silent) setLoading(true);
       const data = await buyerApi.getMyShipments();
       setShipments(Array.isArray(data) ? data : data?.content || []);
     } catch (err) {
@@ -27,6 +20,24 @@ export default function ShipmentsPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const initTimer = setTimeout(() => {
+      void fetchShipments(false);
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchShipments(true);
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchShipments]);
+
+  const handleRefresh = () => {
+    setLoading(true);
+    void fetchShipments(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -69,7 +80,7 @@ export default function ShipmentsPage() {
             Real-time intermodal tracking, container telematics, and port departures.
           </p>
         </div>
-        <Button variant="outline" onClick={() => fetchShipments(false)} size="sm">
+        <Button variant="outline" onClick={handleRefresh} size="sm">
           Refresh Shipments
         </Button>
       </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { buyerApi } from '../../services/buyerApi';
 import { Button } from '../../components/ui/button';
@@ -14,13 +14,7 @@ export default function QuotationDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    fetchQuotation(false);
-    const timer = setInterval(() => fetchQuotation(true), 4000);
-    return () => clearInterval(timer);
-  }, [id]);
-
-  const fetchQuotation = async (silent = false) => {
+  const fetchQuotation = useCallback(async (silent = false) => {
     try {
       if (!id) return;
       const data = await buyerApi.getQuotationDetails(id);
@@ -33,7 +27,20 @@ export default function QuotationDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    const initTimer = setTimeout(() => {
+      void fetchQuotation(false);
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchQuotation(true);
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchQuotation]);
 
   const handleAction = async (action: 'accept' | 'reject') => {
     if (!id || !window.confirm(`Are you sure you want to ${action} this quotation?`)) return;

@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import type { ReactNode } from "react"
 import { jwtDecode } from "jwt-decode"
 import api from "../services/api"
+import { AuthContext } from "./auth-context"
 
 interface JwtPayload {
   sub: string
@@ -9,40 +10,37 @@ interface JwtPayload {
   exp: number
 }
 
-interface AuthContextType {
-  token: string | null
-  roles: string[]
-  isAuthenticated: boolean
-  isLoading: boolean
-  login: (token: string) => void
-  logout: () => void
-  hasRole: (role: string) => boolean
+function getInitialAuthState(): { token: string | null; roles: string[] } {
+  const storedToken = localStorage.getItem("token")
+  if (!storedToken) {
+    return { token: null, roles: [] }
+  }
+  try {
+    const decoded = jwtDecode<JwtPayload>(storedToken)
+    if (decoded.exp * 1000 > Date.now()) {
+      return { token: storedToken, roles: decoded.roles || [] }
+    }
+    localStorage.removeItem("token")
+  } catch {
+    localStorage.removeItem("token")
+  }
+  return { token: null, roles: [] }
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(null)
-  const [roles, setRoles] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [authState, setAuthState] = useState<{ token: string | null; roles: string[] }>(getInitialAuthState)
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token")
-    if (storedToken) {
-      try {
-        const decoded = jwtDecode<JwtPayload>(storedToken)
-        if (decoded.exp * 1000 > Date.now()) {
-          setToken(storedToken)
-          setRoles(decoded.roles || [])
-        } else {
-          // Token expired
-          localStorage.removeItem("token")
-        }
-      } catch (e) {
-        localStorage.removeItem("token")
-      }
-    }
-    setIsLoading(false)
+  const login = useCallback((newToken: string) => {
+    localStorage.setItem("token", newToken)
+    const decoded = jwtDecode<JwtPayload>(newToken)
+    setAuthState({ token: newToken, roles: decoded.roles || [] })
+  }, [])
+
+  const logout = useCallback(() => {
+    localStorage.removeItem("token")
+    setAuthState({ token: null, roles: [] })
+    // Redirect handled by ProtectedRoute or can force reload
+    window.location.href = '/login'
   }, [])
 
   // Hook into axios to handle 401s
@@ -60,34 +58,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       api.interceptors.response.eject(interceptor)
     }
-  }, [])
+  }, [logout])
 
-  const login = (newToken: string) => {
-    localStorage.setItem("token", newToken)
-    const decoded = jwtDecode<JwtPayload>(newToken)
-    setToken(newToken)
-    setRoles(decoded.roles || [])
-  }
-
-  const logout = () => {
-    localStorage.removeItem("token")
-    setToken(null)
-    setRoles([])
-    // Redirect handled by ProtectedRoute or can force reload
-    window.location.href = '/login'
-  }
-
-  const hasRole = (role: string) => {
-    return roles.includes(`ROLE_${role}`) || roles.includes(role)
-  }
+  const hasRole = useCallback(
+    (role: string) => {
+      return authState.roles.includes(`ROLE_${role}`) || authState.roles.includes(role)
+    },
+    [authState.roles]
+  )
 
   return (
     <AuthContext.Provider
       value={{
-        token,
-        roles,
-        isAuthenticated: !!token,
-        isLoading,
+        token: authState.token,
+        roles: authState.roles,
+        isAuthenticated: !!authState.token,
+        isLoading: false,
         login,
         logout,
         hasRole,
@@ -96,12 +82,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-  return context
 }

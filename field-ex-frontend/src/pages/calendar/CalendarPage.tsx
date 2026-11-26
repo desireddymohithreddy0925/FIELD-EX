@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Calendar as CalendarIcon, Clock, CheckCircle2, Truck,
   RefreshCw, Search, FileText, ChevronLeft, ChevronRight, List, Grid
@@ -35,9 +35,7 @@ export default function CalendarPage() {
   });
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
 
-  const fetchEvents = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    setIsSyncing(true);
+  const fetchEvents = useCallback(async (silent = false) => {
     try {
       const data = await adminApi.getCalendarEvents();
       setEvents(Array.isArray(data) ? data : []);
@@ -48,13 +46,26 @@ export default function CalendarPage() {
       setIsLoading(false);
       setIsSyncing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchEvents(false);
-    const timer = setInterval(() => fetchEvents(true), 4000);
-    return () => clearInterval(timer);
-  }, []);
+    const initTimer = setTimeout(() => {
+      void fetchEvents(false);
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchEvents(true);
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchEvents]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setIsSyncing(true);
+    void fetchEvents(false);
+  };
 
   const toDayKey = (dateInput: string | Date) => {
     const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
@@ -179,7 +190,7 @@ export default function CalendarPage() {
             </button>
           </div>
 
-          <Button variant="outline" size="sm" onClick={() => fetchEvents(false)} disabled={isLoading || isSyncing} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading || isSyncing} className="gap-2">
             <RefreshCw className={`w-3.5 h-3.5 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
             Sync Now
           </Button>

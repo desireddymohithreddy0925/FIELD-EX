@@ -14,7 +14,7 @@ import {
 } from "../../components/ui/form"
 import { Input } from "../../components/ui/input"
 import { authService, loginSchema, type LoginRequest } from "../../services/auth.service"
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../context/auth-context"
 
 export function LoginPage() {
   const { login } = useAuth()

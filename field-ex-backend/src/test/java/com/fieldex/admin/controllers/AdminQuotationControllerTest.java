@@ -147,7 +147,6 @@ public class AdminQuotationControllerTest {
     }
 
     @Test
-    @org.junit.jupiter.api.Disabled("Fails only in full test suite run with 403, likely due to state leak. Passes in isolation.")
     void shouldUpdateAndSendQuotation() throws Exception {
         AdminQuotationUpdate update = new AdminQuotationUpdate();
         update.setCurrencyCode("USD");

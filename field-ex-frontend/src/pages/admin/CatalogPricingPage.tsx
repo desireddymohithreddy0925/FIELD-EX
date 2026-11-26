@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Globe, Plus, Edit2, DollarSign, Sparkles, RefreshCw, 
   CheckCircle2, AlertCircle, X
@@ -92,10 +92,7 @@ export default function CatalogPricingPage() {
 
   const toKgMultiplier = (unit?: string) => (unit === 'MT' ? 1000 : 1);
 
-  const fetchCatalog = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    setIsSyncing(true);
-    if (!silent) setErrorMessage(null);
+  const fetchCatalog = useCallback(async (silent = false) => {
     try {
       const res = await buyerApi.getFruits({ page: 0, size: 50 });
       const fruitList = res.content || [];
@@ -109,6 +106,7 @@ export default function CatalogPricingPage() {
         })
       );
       setFruits(fullFruits);
+      setErrorMessage(null);
       setLastSynced(new Date());
     } catch (err: any) {
       if (!silent) {
@@ -124,20 +122,30 @@ export default function CatalogPricingPage() {
       setIsLoading(false);
       setIsSyncing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchCatalog(false);
-  }, []);
+    const initTimer = setTimeout(() => {
+      void fetchCatalog(false);
+    }, 0);
+    return () => clearTimeout(initTimer);
+  }, [fetchCatalog]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       if (!priceModalVariety && !specsModalVariety && !isNewFruitModalOpen && !newVarietyFruitId) {
-        fetchCatalog(true);
+        void fetchCatalog(true);
       }
     }, 4000);
     return () => clearInterval(timer);
-  }, [priceModalVariety, specsModalVariety, isNewFruitModalOpen, newVarietyFruitId]);
+  }, [priceModalVariety, specsModalVariety, isNewFruitModalOpen, newVarietyFruitId, fetchCatalog]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setIsSyncing(true);
+    setErrorMessage(null);
+    void fetchCatalog(false);
+  };
 
   const openPricingModal = (fruit: Fruit, variety: FruitVariety) => {
     setPriceModalVariety({ fruit, variety });
@@ -264,7 +272,7 @@ export default function CatalogPricingPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => fetchCatalog(false)} disabled={isLoading || isSyncing} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading || isSyncing} className="gap-2">
             <RefreshCw className={`w-3.5 h-3.5 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
             Refresh
           </Button>

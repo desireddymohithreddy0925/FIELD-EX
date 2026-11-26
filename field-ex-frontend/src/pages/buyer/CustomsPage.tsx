@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buyerApi } from '../../services/buyerApi';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -11,15 +11,8 @@ export default function CustomsPage() {
   const [customsShipments, setCustomsShipments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCustomsData(false);
-    const timer = setInterval(() => fetchCustomsData(true), 4000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const fetchCustomsData = async (silent = false) => {
+  const fetchCustomsData = useCallback(async (silent = false) => {
     try {
-      if (!silent) setLoading(true);
       const shipments = await buyerApi.getMyShipments();
       const list = Array.isArray(shipments) ? shipments : [];
       // Filter shipments that are in customs or recently cleared
@@ -32,6 +25,24 @@ export default function CustomsPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const initTimer = setTimeout(() => {
+      void fetchCustomsData(false);
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchCustomsData(true);
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchCustomsData]);
+
+  const handleRefresh = () => {
+    setLoading(true);
+    void fetchCustomsData(false);
   };
 
   if (loading) {
@@ -56,7 +67,7 @@ export default function CustomsPage() {
             Single-window international trade compliance, phytosanitary clearance, and duty manifests.
           </p>
         </div>
-        <Button variant="outline" onClick={() => fetchCustomsData(false)} size="sm">
+        <Button variant="outline" onClick={handleRefresh} size="sm">
           Refresh Customs
         </Button>
       </div>

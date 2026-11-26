@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { buyerApi } from '../../services/buyerApi';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -9,15 +9,8 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchNotifications(false);
-    const timer = setInterval(() => fetchNotifications(true), 4000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const fetchNotifications = async (silent = false) => {
+  const fetchNotifications = useCallback(async (silent = false) => {
     try {
-      if (!silent) setLoading(true);
       const data = await buyerApi.getMyNotifications();
       setNotifications(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -25,6 +18,24 @@ export default function NotificationsPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const initTimer = setTimeout(() => {
+      void fetchNotifications(false);
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchNotifications(true);
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchNotifications]);
+
+  const handleRefresh = () => {
+    setLoading(true);
+    void fetchNotifications(false);
   };
 
   const getNotificationIcon = (type: string) => {
@@ -80,7 +91,7 @@ export default function NotificationsPage() {
             Real-time status updates on quotations, cold storage dispatch, customs, and deliveries.
           </p>
         </div>
-        <Button variant="outline" onClick={() => fetchNotifications(false)} size="sm">
+        <Button variant="outline" onClick={handleRefresh} size="sm">
           Refresh
         </Button>
       </div>

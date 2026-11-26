@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   ShieldCheck, UserPlus, Search, 
   CheckCircle2, AlertCircle, RefreshCw, X, ShieldAlert
@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { adminApi, type UserDto } from '../../services/adminApi';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/auth-context';
 
 const AVAILABLE_ROLES: { value: UserDto['role']; label: string; badgeColor: string; description: string }[] = [
   { value: 'ADMIN', label: 'Administrator', badgeColor: 'bg-primary text-primary-foreground border-primary', description: 'Full system control, role assignment, and platform configuration' },
@@ -45,12 +45,11 @@ export default function AdminUsersPage() {
   });
   const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
 
-  const fetchUsers = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    if (!silent) setErrorMessage(null);
+  const fetchUsers = useCallback(async (silent = false) => {
     try {
       const data = await adminApi.getUsers();
       setUsers(data);
+      setErrorMessage(null);
       setLastSynced(new Date());
     } catch (err: any) {
       if (!silent) {
@@ -65,20 +64,29 @@ export default function AdminUsersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchUsers(false);
-  }, []);
+    const initTimer = setTimeout(() => {
+      void fetchUsers(false);
+    }, 0);
+    return () => clearTimeout(initTimer);
+  }, [fetchUsers]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       if (!isCreateModalOpen && !isUpdatingUserId) {
-        fetchUsers(true);
+        void fetchUsers(true);
       }
     }, 4000);
     return () => clearInterval(timer);
-  }, [isCreateModalOpen, isUpdatingUserId]);
+  }, [isCreateModalOpen, isUpdatingUserId, fetchUsers]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    void fetchUsers(false);
+  };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     setIsUpdatingUserId(userId);
@@ -161,7 +169,7 @@ export default function AdminUsersPage() {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => fetchUsers(false)} 
+            onClick={handleRefresh} 
             disabled={isLoading}
             className="gap-2"
           >

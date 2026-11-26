@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Ship, Archive, Clock, AlertCircle, RefreshCw } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -10,8 +10,7 @@ export default function LogisticsDashboard() {
   const [shipments, setShipments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchLogisticsData = async () => {
-    setIsLoading(true);
+  const fetchLogisticsData = useCallback(async () => {
     try {
       const [ordersData, shipmentsData] = await Promise.all([
         adminApi.getAllOrders().catch(() => []),
@@ -24,13 +23,25 @@ export default function LogisticsDashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchLogisticsData();
-    const timer = setInterval(fetchLogisticsData, 4000);
-    return () => clearInterval(timer);
-  }, []);
+    const initTimer = setTimeout(() => {
+      void fetchLogisticsData();
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchLogisticsData();
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchLogisticsData]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    void fetchLogisticsData();
+  };
 
   const inTransitCount = orders.filter(o => o.status === 'IN_TRANSIT' || o.status === 'DISPATCHED').length;
   const packagingQueueCount = orders.filter(o => o.status === 'PROCESSING').length;
@@ -64,7 +75,7 @@ export default function LogisticsDashboard() {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={fetchLogisticsData} 
+          onClick={handleRefresh} 
           disabled={isLoading}
           className="text-xs gap-1.5"
         >
@@ -84,7 +95,7 @@ export default function LogisticsDashboard() {
             <p className="text-xs text-muted-foreground mt-1">Ocean freight in transit</p>
           </CardContent>
         </Card>
-        
+
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Packaging Queue</CardTitle>
@@ -95,7 +106,7 @@ export default function LogisticsDashboard() {
             <p className="text-xs text-muted-foreground mt-1">Accepted orders awaiting packing</p>
           </CardContent>
         </Card>
-        
+
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Customs Staging</CardTitle>
@@ -130,7 +141,7 @@ export default function LogisticsDashboard() {
                 <LineChart data={logisticsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <XAxis dataKey="day" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--card)' }}
                     itemStyle={{ color: 'var(--foreground)' }}
                   />
@@ -156,11 +167,10 @@ export default function LogisticsDashboard() {
                   {shipments.slice(0, 4).map((sh: any) => (
                     <div key={sh.id} className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className={`p-2 rounded-lg shrink-0 ${
-                          sh.status === 'DELAYED'
+                        <div className={`p-2 rounded-lg shrink-0 ${sh.status === 'DELAYED'
                             ? 'bg-red-100 text-red-700'
                             : 'bg-blue-100 text-blue-700'
-                        }`}>
+                          }`}>
                           {sh.status === 'DELAYED' ? <AlertCircle className="w-4 h-4" /> : <Ship className="w-4 h-4" />}
                         </div>
                         <div className="min-w-0">

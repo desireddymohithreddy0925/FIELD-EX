@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buyerApi } from '../../services/buyerApi';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -11,15 +11,8 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDocuments(false);
-    const timer = setInterval(() => fetchDocuments(true), 4000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const fetchDocuments = async (silent = false) => {
+  const fetchDocuments = useCallback(async (silent = false) => {
     try {
-      if (!silent) setLoading(true);
       const data = await buyerApi.getMyDocuments();
       setDocuments(Array.isArray(data) ? data : data?.content || []);
     } catch (err) {
@@ -27,6 +20,24 @@ export default function DocumentsPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const initTimer = setTimeout(() => {
+      void fetchDocuments(false);
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchDocuments(true);
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchDocuments]);
+
+  const handleRefresh = () => {
+    setLoading(true);
+    void fetchDocuments(false);
   };
 
   const getDocTypeBadge = (type: string) => {
@@ -68,7 +79,7 @@ export default function DocumentsPage() {
             Cryptographically certified export documentation, phyto-inspections, and ocean shipping manifests.
           </p>
         </div>
-        <Button variant="outline" onClick={() => fetchDocuments(false)} size="sm">
+        <Button variant="outline" onClick={handleRefresh} size="sm">
           Refresh Documents
         </Button>
       </div>

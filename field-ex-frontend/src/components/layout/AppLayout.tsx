@@ -1,7 +1,7 @@
 import { Outlet, NavLink, Link, useLocation } from "react-router-dom"
 import type { LucideIcon } from "lucide-react"
 import { LogOut, Sprout, Shield, ArrowUpRight, ChevronRight, Home } from "lucide-react"
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../context/auth-context"
 import { Badge } from "../ui/badge"
 
 export interface NavItem {

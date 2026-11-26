@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
 import { ShieldAlert, ArrowLeft, Home } from "lucide-react"
 import { Button } from "../../components/ui/button"
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../context/auth-context"
 
 export function UnauthorizedPage() {
   const { hasRole, isAuthenticated } = useAuth()

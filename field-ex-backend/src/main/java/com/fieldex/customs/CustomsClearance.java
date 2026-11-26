@@ -1,5 +1,6 @@
 package com.fieldex.customs;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fieldex.common.entity.BaseEntity;
 import com.fieldex.order.Order;
 import jakarta.persistence.*;
@@ -19,10 +20,12 @@ import org.hibernate.envers.Audited;
 @Builder
 public class CustomsClearance extends BaseEntity {
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "declaration_id")
     @org.hibernate.envers.Audited(targetAuditMode = org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED)

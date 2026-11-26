@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { ClipboardCheck, CheckSquare, AlertTriangle, Box, CheckCircle, RefreshCw } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -9,8 +9,7 @@ export default function QcDashboard() {
   const [inspections, setInspections] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchQcData = async () => {
-    setIsLoading(true);
+  const fetchQcData = useCallback(async () => {
     try {
       const data = await adminApi.getQualityInspections();
       setInspections(Array.isArray(data) ? data : (data?.content || []));
@@ -19,13 +18,25 @@ export default function QcDashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchQcData();
-    const timer = setInterval(fetchQcData, 4000);
-    return () => clearInterval(timer);
-  }, []);
+    const initTimer = setTimeout(() => {
+      void fetchQcData();
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchQcData();
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchQcData]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    void fetchQcData();
+  };
 
   const pendingCount = inspections.filter(i => i.status === 'PENDING' || i.status === 'REQUIRES_REINSPECTION').length;
   const passedCount = inspections.filter(i => i.status === 'PASSED' || i.status === 'PARTIALLY_PASSED').length;
@@ -61,7 +72,7 @@ export default function QcDashboard() {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={fetchQcData} 
+          onClick={handleRefresh} 
           disabled={isLoading}
           className="text-xs gap-1.5"
         >

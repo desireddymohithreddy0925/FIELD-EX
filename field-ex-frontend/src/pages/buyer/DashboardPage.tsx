@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Package, FileText, CheckCircle, ArrowRight, Sprout, Thermometer, RefreshCw } from 'lucide-react';
 import { buyerApi } from '../../services/buyerApi';
 import { useNavigate, Link } from 'react-router-dom';
@@ -11,8 +11,7 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchLiveBuyerData = async () => {
-    setIsLoading(true);
+  const fetchLiveBuyerData = useCallback(async () => {
     try {
       const [qData, oData] = await Promise.all([
         buyerApi.getQuotations(0, 100).catch(() => ({ content: [] })),
@@ -25,13 +24,25 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchLiveBuyerData();
-    const timer = setInterval(fetchLiveBuyerData, 4000);
-    return () => clearInterval(timer);
-  }, []);
+    const initTimer = setTimeout(() => {
+      void fetchLiveBuyerData();
+    }, 0);
+    const timer = setInterval(() => {
+      void fetchLiveBuyerData();
+    }, 4000);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
+  }, [fetchLiveBuyerData]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    void fetchLiveBuyerData();
+  };
 
   const pendingQuotations = quotations.filter(q => q.status === 'REQUESTED' || q.status === 'SENT').length;
   const activeOrders = orders.filter(o => o.status !== 'DELIVERED' && o.status !== 'CANCELLED').length;
@@ -62,7 +73,7 @@ export default function DashboardPage() {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={fetchLiveBuyerData}
+            onClick={handleRefresh}
             disabled={isLoading}
             className="text-xs gap-1.5"
           >

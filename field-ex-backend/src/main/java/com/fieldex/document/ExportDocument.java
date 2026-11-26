@@ -1,5 +1,6 @@
 package com.fieldex.document;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fieldex.common.entity.BaseEntity;
 import com.fieldex.order.Order;
 import jakarta.persistence.*;
@@ -24,6 +25,7 @@ public class ExportDocument extends BaseEntity {
     @Column(nullable = false)
     private DocumentType type;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;

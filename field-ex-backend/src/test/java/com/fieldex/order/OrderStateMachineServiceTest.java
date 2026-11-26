@@ -4,6 +4,7 @@ import com.fieldex.inventory.InventoryService;
 import com.fieldex.user.Role;
 import com.fieldex.user.User;
 import com.fieldex.user.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,6 +54,12 @@ class OrderStateMachineServiceTest {
                 .role(Role.ADMIN)
                 .build();
         adminUser.setId(UUID.randomUUID());
+        SecurityContextHolder.clearContext();
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     private void setupSecurityContext(User user) {

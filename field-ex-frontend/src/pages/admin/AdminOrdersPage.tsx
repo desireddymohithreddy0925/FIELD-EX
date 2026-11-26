@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   History, CheckCircle2, RefreshCw, 
   Search, X, ShieldAlert, UserCheck
@@ -50,9 +50,7 @@ export default function AdminOrdersPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const fetchOrders = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    setIsSyncing(true);
+  const fetchOrders = useCallback(async (silent = false) => {
     try {
       const data = await adminApi.getAllOrders();
       setOrders(Array.isArray(data) ? data : (data?.content || []));
@@ -71,20 +69,29 @@ export default function AdminOrdersPage() {
       setIsLoading(false);
       setIsSyncing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchOrders(false);
-  }, []);
+    const initTimer = setTimeout(() => {
+      void fetchOrders(false);
+    }, 0);
+    return () => clearTimeout(initTimer);
+  }, [fetchOrders]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       if (!transitionOrder && !acceptanceModalOrder && !historyOrder) {
-        fetchOrders(true);
+        void fetchOrders(true);
       }
     }, 4000);
     return () => clearInterval(timer);
-  }, [transitionOrder, acceptanceModalOrder, historyOrder]);
+  }, [transitionOrder, acceptanceModalOrder, historyOrder, fetchOrders]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setIsSyncing(true);
+    void fetchOrders(false);
+  };
 
   const openHistoryModal = async (order: any) => {
     setHistoryOrder(order);
@@ -189,7 +196,7 @@ export default function AdminOrdersPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => fetchOrders(false)} disabled={isLoading || isSyncing} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading || isSyncing} className="gap-2">
             <RefreshCw className={`w-3.5 h-3.5 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
