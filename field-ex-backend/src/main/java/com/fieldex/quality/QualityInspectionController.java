@@ -28,21 +28,21 @@ public class QualityInspectionController {
     private final QualityInspectionService inspectionService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'QC_INSPECTOR', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QC_INSPECTOR', 'MANAGER')")
     @Operation(summary = "Get all quality inspections")
     public ResponseEntity<Page<QualityInspectionDto>> getAllInspections(Pageable pageable) {
         return ResponseEntity.ok(inspectionService.getAllInspections(pageable));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'QC_INSPECTOR', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QC_INSPECTOR', 'MANAGER')")
     @Operation(summary = "Get inspection by ID")
     public ResponseEntity<QualityInspectionDto> getInspectionById(@PathVariable UUID id) {
         return ResponseEntity.ok(inspectionService.getInspectionById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'QC_INSPECTOR', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QC_INSPECTOR', 'MANAGER')")
     @Operation(summary = "Create quality inspection")
     public ResponseEntity<QualityInspectionDto> createInspection(
             @Valid @RequestBody QualityInspectionCreateRequest request,
@@ -52,7 +52,7 @@ public class QualityInspectionController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'QC_INSPECTOR', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QC_INSPECTOR', 'MANAGER')")
     @Operation(summary = "Update quality inspection status")
     public ResponseEntity<QualityInspectionDto> updateStatus(
             @PathVariable UUID id,

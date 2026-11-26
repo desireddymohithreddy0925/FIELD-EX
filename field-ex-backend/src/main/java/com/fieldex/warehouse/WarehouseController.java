@@ -26,7 +26,7 @@ public class WarehouseController {
     private final WarehouseService warehouseService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Get warehouses with filters")
     public ResponseEntity<Page<WarehouseDto>> getWarehouses(
             @RequestParam(required = false) WarehouseType type,
@@ -37,14 +37,14 @@ public class WarehouseController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Get warehouse by ID")
     public ResponseEntity<WarehouseDto> getWarehouseById(@PathVariable UUID id) {
         return ResponseEntity.ok(warehouseService.getWarehouseById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Create warehouse")
     public ResponseEntity<WarehouseDto> createWarehouse(@Valid @RequestBody WarehouseCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(warehouseService.createWarehouse(request));

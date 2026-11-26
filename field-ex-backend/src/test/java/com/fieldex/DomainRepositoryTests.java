@@ -41,10 +41,10 @@ class DomainRepositoryTests {
     @Test
     void testUserSaveAndAudit() {
         User user = User.builder()
-                .name("Test Engineer")
-                .email("engineer@field-ex.com")
+                .name("Test Manager")
+                .email("manager@field-ex.com")
                 .passwordHash("hashed")
-                .role(Role.ENGINEER)
+                .role(Role.MANAGER)
                 .build();
         
         User saved = userRepository.saveAndFlush(user);

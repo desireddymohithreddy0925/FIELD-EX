@@ -23,7 +23,7 @@ public class PackagingController {
     private final PackagingService packagingService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a packaging record")
     public PackagingRecordDto createPackagingRecord(@Valid @RequestBody PackagingCreateRequest request) {
@@ -31,7 +31,7 @@ public class PackagingController {
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Update packaging status")
     public PackagingRecordDto updateStatus(
             @PathVariable UUID id,
@@ -40,7 +40,7 @@ public class PackagingController {
     }
 
     @GetMapping("/order/{orderId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'BUYER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'BUYER', 'MANAGER')")
     @Operation(summary = "Get packaging records by order ID")
     public List<PackagingRecordDto> getPackagingRecordsByOrder(@PathVariable UUID orderId) {
         // IDOR checking would ideally be handled in service to ensure Buyer can only see their own order's packaging

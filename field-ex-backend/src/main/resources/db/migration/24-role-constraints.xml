@@ -8,7 +8,7 @@
     <changeSet id="24" author="field-ex">
         <sql>
             ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
-            ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('ADMIN', 'BUYER', 'QC_INSPECTOR', 'ENGINEER', 'LOGISTICS', 'MANAGER', 'EDITOR'));
+            ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('ADMIN', 'BUYER', 'QC_INSPECTOR', 'LOGISTICS', 'MANAGER'));
         </sql>
     </changeSet>
 </databaseChangeLog>

@@ -22,7 +22,7 @@ public class AdminQuotationController {
     private final QuotationService quotationService;
 
     @PutMapping("/{id}/send")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Update and send quotation to buyer")
     public ResponseEntity<QuotationDto> updateAndSendQuotation(
             @PathVariable UUID id,

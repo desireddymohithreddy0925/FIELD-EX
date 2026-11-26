@@ -27,7 +27,7 @@ public class ShipmentController {
     }
 
     @GetMapping("/orders/{orderId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'BUYER', 'ENGINEER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'BUYER', 'MANAGER')")
     @Operation(summary = "Get shipment for an order")
     public ResponseEntity<Shipment> getShipmentByOrder(@PathVariable UUID orderId) {
         return shipmentService.getShipmentByOrderId(orderId)

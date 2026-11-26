@@ -1,7 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Users, Truck, Globe, ShieldCheck, Warehouse, FileText, Anchor, Sprout } from 'lucide-react';
+import { Users, Truck, Globe, ShieldCheck, Warehouse, FileText, Anchor, Sprout, ArrowRight, UserCheck } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Link } from 'react-router-dom';
 
 const dummyData = [
   { name: 'Jan', revenue: 4000, orders: 24 },
@@ -125,14 +127,14 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* System Health */}
+        {/* System Health & RBAC Policy */}
         <Card className="lg:col-span-1 border-border shadow-soft bg-card flex flex-col justify-between">
           <CardHeader className="border-b border-border pb-4">
             <CardTitle className="text-base font-heading font-bold text-foreground">Infrastructure Health</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">Real-time subsystem telemetry</p>
           </CardHeader>
           <CardContent className="pt-6 flex-1 flex flex-col justify-between">
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-agro-forest/10 text-primary rounded-lg">
@@ -140,10 +142,10 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <p className="font-semibold text-sm text-foreground">API Gateway & RBAC</p>
-                    <p className="text-xs text-muted-foreground">Latency: 28ms</p>
+                    <p className="text-xs text-muted-foreground">Admin Governed</p>
                   </div>
                 </div>
-                <Badge variant="olive">Healthy</Badge>
+                <Badge variant="olive">Enforced</Badge>
               </div>
               
               <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border">
@@ -173,13 +175,38 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+            <div className="mt-5 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
               <span>PostgreSQL + Redis Cache</span>
               <span className="font-semibold text-primary">Connected</span>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Role Assignment Governance Banner */}
+      <Card className="border-border shadow-soft bg-card overflow-hidden">
+        <div className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+              <UserCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-heading font-bold text-foreground">
+                Role Governance & Administrative Assignment
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
+                All platform roles (Admin, Operations Manager, QC Inspector, Logistics Officer, Buyer) are strictly assigned by Administrators. Self-assignment or unauthorized role escalation is blocked at the gateway level.
+              </p>
+            </div>
+          </div>
+
+          <Link to="/admin/users">
+            <Button size="sm" className="gap-2 font-semibold shadow-sm whitespace-nowrap">
+              Manage Users & Assign Roles <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
+      </Card>
     </div>
   );
 }

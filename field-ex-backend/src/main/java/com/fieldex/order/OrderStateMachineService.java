@@ -115,8 +115,8 @@ public class OrderStateMachineService {
                 }
                 break;
             case PROCESSING:
-                if (role != Role.ADMIN && role != Role.MANAGER && role != Role.ENGINEER) {
-                    throw new org.springframework.security.access.AccessDeniedException("Only ADMIN, MANAGER or ENGINEER can process orders");
+                if (role != Role.ADMIN && role != Role.MANAGER) {
+                    throw new org.springframework.security.access.AccessDeniedException("Only ADMIN or MANAGER can process orders");
                 }
                 break;
             case PACKED:
@@ -124,7 +124,7 @@ public class OrderStateMachineService {
             case IN_TRANSIT:
             case CUSTOMS:
             case DELIVERED:
-                if (role != Role.ADMIN && role != Role.MANAGER && role != Role.ENGINEER && role != Role.LOGISTICS) {
+                if (role != Role.ADMIN && role != Role.MANAGER && role != Role.LOGISTICS) {
                     throw new org.springframework.security.access.AccessDeniedException("Unauthorized to update logistics status");
                 }
                 break;

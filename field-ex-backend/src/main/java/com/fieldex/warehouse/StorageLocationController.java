@@ -25,14 +25,14 @@ public class StorageLocationController {
     private final StorageLocationService storageLocationService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Get storage locations for a warehouse")
     public ResponseEntity<List<StorageLocationDto>> getLocations(@PathVariable UUID warehouseId) {
         return ResponseEntity.ok(storageLocationService.getLocationsForWarehouse(warehouseId));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Create storage location in a warehouse")
     public ResponseEntity<StorageLocationDto> createLocation(
             @PathVariable UUID warehouseId,

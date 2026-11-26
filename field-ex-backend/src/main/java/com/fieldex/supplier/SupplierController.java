@@ -28,8 +28,8 @@ public class SupplierController {
     private final SupplierService supplierService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'QC_INSPECTOR', 'MANAGER', 'EDITOR')")
-    @Operation(summary = "Search suppliers", description = "Dynamic search and pagination. Accessible by ADMIN, ENGINEER, QC_INSPECTOR, MANAGER, EDITOR")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QC_INSPECTOR', 'MANAGER')")
+    @Operation(summary = "Search suppliers", description = "Dynamic search and pagination. Accessible by ADMIN, QC_INSPECTOR, MANAGER")
     public ResponseEntity<Page<SupplierDto>> getSuppliers(
             @RequestParam Map<String, String> criteria,
             Pageable pageable) {
@@ -37,22 +37,22 @@ public class SupplierController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'QC_INSPECTOR', 'MANAGER', 'EDITOR')")
-    @Operation(summary = "Get supplier by ID", description = "Accessible by ADMIN, ENGINEER, QC_INSPECTOR, MANAGER, EDITOR")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QC_INSPECTOR', 'MANAGER')")
+    @Operation(summary = "Get supplier by ID", description = "Accessible by ADMIN, QC_INSPECTOR, MANAGER")
     public ResponseEntity<SupplierDto> getSupplierById(@PathVariable UUID id) {
         return ResponseEntity.ok(supplierService.getSupplierById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER', 'EDITOR')")
-    @Operation(summary = "Create supplier", description = "Accessible by ADMIN, ENGINEER, MANAGER, EDITOR")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Create supplier", description = "Accessible by ADMIN, MANAGER")
     public ResponseEntity<SupplierDto> createSupplier(@Valid @RequestBody SupplierCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(supplierService.createSupplier(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER', 'EDITOR')")
-    @Operation(summary = "Update supplier details", description = "Accessible by ADMIN, ENGINEER, MANAGER, EDITOR")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Update supplier details", description = "Accessible by ADMIN, MANAGER")
     public ResponseEntity<SupplierDto> updateSupplier(
             @PathVariable UUID id,
             @Valid @RequestBody SupplierUpdateRequest request) {
@@ -60,16 +60,16 @@ public class SupplierController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER', 'EDITOR')")
-    @Operation(summary = "Deactivate supplier", description = "Accessible by ADMIN, ENGINEER, MANAGER, EDITOR")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Deactivate supplier", description = "Accessible by ADMIN, MANAGER")
     public ResponseEntity<Void> deactivateSupplier(@PathVariable UUID id) {
         supplierService.deactivateSupplier(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER', 'EDITOR')")
-    @Operation(summary = "Activate supplier", description = "Accessible by ADMIN, ENGINEER, MANAGER, EDITOR")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Activate supplier", description = "Accessible by ADMIN, MANAGER")
     public ResponseEntity<Void> activateSupplier(@PathVariable UUID id) {
         supplierService.activateSupplier(id);
         return ResponseEntity.noContent().build();

@@ -45,10 +45,8 @@ export function LoginPage() {
             ADMIN: "/admin",
             BUYER: "/buyer",
             QC_INSPECTOR: "/qc",
-            ENGINEER: "/engineer",
             LOGISTICS: "/logistics",
             MANAGER: "/manager",
-            EDITOR: "/editor",
           }
           const destination = response.role ? (rolePathMap[response.role] || "/") : "/"
           navigate(destination, { replace: true })
@@ -206,15 +204,6 @@ export function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => setPreset("editor@field-ex.com")}
-                className="p-2 rounded-lg bg-background hover:bg-muted border border-border text-left transition-colors"
-              >
-                <p className="font-semibold text-foreground">Editor</p>
-                <p className="text-[10px] text-muted-foreground truncate">editor@field-ex.com</p>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setPreset("qc@field-ex.com")}
                 className="p-2 rounded-lg bg-background hover:bg-muted border border-border text-left transition-colors"
               >
@@ -224,17 +213,8 @@ export function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => setPreset("eng@field-ex.com")}
-                className="p-2 rounded-lg bg-background hover:bg-muted border border-border text-left transition-colors"
-              >
-                <p className="font-semibold text-foreground">Engineer</p>
-                <p className="text-[10px] text-muted-foreground truncate">eng@field-ex.com</p>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setPreset("logistics@field-ex.com")}
-                className="p-2 rounded-lg bg-background hover:bg-muted border border-border text-left transition-colors col-span-2 sm:col-span-1"
+                className="p-2 rounded-lg bg-background hover:bg-muted border border-border text-left transition-colors col-span-2"
               >
                 <p className="font-semibold text-foreground">Logistics</p>
                 <p className="text-[10px] text-muted-foreground truncate">logistics@field-ex.com</p>

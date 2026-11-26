@@ -28,7 +28,7 @@ public class FruitBatchController {
     private final FruitBatchService batchService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'QC_INSPECTOR', 'LOGISTICS', 'MANAGER', 'EDITOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QC_INSPECTOR', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Get all fruit batches")
     public ResponseEntity<Page<FruitBatchDto>> getAllBatches(
             com.fieldex.batch.dto.FruitBatchFilter filter,
@@ -37,14 +37,14 @@ public class FruitBatchController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'QC_INSPECTOR', 'LOGISTICS', 'MANAGER', 'EDITOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QC_INSPECTOR', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Get fruit batch by ID")
     public ResponseEntity<FruitBatchDto> getBatchById(@PathVariable UUID id) {
         return ResponseEntity.ok(batchService.getBatchById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER', 'EDITOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Create fruit batch")
     public ResponseEntity<FruitBatchDto> createBatch(
             @Valid @RequestBody FruitBatchCreateRequest request,
@@ -54,7 +54,7 @@ public class FruitBatchController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Update fruit batch status")
     public ResponseEntity<FruitBatchDto> updateStatus(
             @PathVariable UUID id,

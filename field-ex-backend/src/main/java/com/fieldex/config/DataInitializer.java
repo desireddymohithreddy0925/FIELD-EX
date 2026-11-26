@@ -85,10 +85,6 @@ public class DataInitializer implements CommandLineRunner {
         upsertUser("qc@field-ex.com", "Senior QC Inspector", Role.QC_INSPECTOR, defaultPasswordHash);
         log.info("Seeded/Updated QC Inspector: qc@field-ex.com");
 
-        // Engineer
-        upsertUser("eng@field-ex.com", "Principal Systems Engineer", Role.ENGINEER, defaultPasswordHash);
-        log.info("Seeded/Updated Engineer: eng@field-ex.com");
-
         // Logistics
         upsertUser("logistics@field-ex.com", "Logistics Director", Role.LOGISTICS, defaultPasswordHash);
         log.info("Seeded/Updated Logistics: logistics@field-ex.com");
@@ -97,9 +93,9 @@ public class DataInitializer implements CommandLineRunner {
         upsertUser("manager@field-ex.com", "Operations General Manager", Role.MANAGER, defaultPasswordHash);
         log.info("Seeded/Updated Manager: manager@field-ex.com");
 
-        // Editor
-        upsertUser("editor@field-ex.com", "Produce Catalog Editor", Role.EDITOR, defaultPasswordHash);
-        log.info("Seeded/Updated Editor: editor@field-ex.com");
+        // Clean up deprecated roles if present
+        userRepository.findByEmail("eng@field-ex.com").ifPresent(userRepository::delete);
+        userRepository.findByEmail("editor@field-ex.com").ifPresent(userRepository::delete);
     }
 
     private void seedProduceCatalog() {

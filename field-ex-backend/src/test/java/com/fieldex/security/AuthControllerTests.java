@@ -138,7 +138,7 @@ class AuthControllerTests {
                 .content(objectMapper.writeValueAsString(registerRequest)));
                 
         User user = userRepository.findByEmail("eng@field-ex.com").orElseThrow();
-        user.setRole(Role.ENGINEER);
+        user.setRole(Role.LOGISTICS);
         userRepository.save(user);
 
         LoginRequest loginRequest = LoginRequest.builder()
@@ -216,34 +216,5 @@ class AuthControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").exists())
                 .andExpect(jsonPath("$.role").value("MANAGER"));
-    }
-
-    @Test
-    void testEditorLoginAndRole() throws Exception {
-        RegisterRequest registerRequest = RegisterRequest.builder()
-                .name("Produce Editor")
-                .email("testeditor@field-ex.com")
-                .password("editorpass123")
-                .build();
-
-        mockMvc.perform(post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(registerRequest)));
-
-        User user = userRepository.findByEmail("testeditor@field-ex.com").orElseThrow();
-        user.setRole(Role.EDITOR);
-        userRepository.save(user);
-
-        LoginRequest loginRequest = LoginRequest.builder()
-                .email("testeditor@field-ex.com")
-                .password("editorpass123")
-                .build();
-
-        mockMvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists())
-                .andExpect(jsonPath("$.role").value("EDITOR"));
     }
 }

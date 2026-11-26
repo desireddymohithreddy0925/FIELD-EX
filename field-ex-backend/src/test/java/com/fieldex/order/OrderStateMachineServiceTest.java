@@ -134,14 +134,14 @@ class OrderStateMachineServiceTest {
     }
 
     @Test
-    void testUnauthorizedTransition_EditorTryingToTransitionOrder() {
-        User editorUser = User.builder().email("editor@test.com").role(Role.EDITOR).build();
-        setupSecurityContext(editorUser);
+    void testUnauthorizedTransition_BuyerTryingToTransitionOrder() {
+        User buyerUser = User.builder().email("buyer@test.com").role(Role.BUYER).build();
+        setupSecurityContext(buyerUser);
         order.setStatus(OrderStatus.PAYMENT_PENDING);
         when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
 
         assertThrows(AccessDeniedException.class, () -> {
-            stateMachineService.transitionState(order.getId(), OrderStatus.PAID, "Editor cannot approve orders");
+            stateMachineService.transitionState(order.getId(), OrderStatus.PAID, "Buyer cannot approve orders");
         });
     }
 }

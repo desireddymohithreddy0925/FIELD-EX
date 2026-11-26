@@ -165,8 +165,8 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = {"EDITOR"})
-    void testEditorCanAccessCatalogAndSuppliers() throws Exception {
+    @WithMockUser(roles = {"QC_INSPECTOR"})
+    void testQcInspectorCanAccessCatalogAndSuppliers() throws Exception {
         mockMvc.perform(get("/api/v1/catalog/fruits"))
                 .andExpect(status().isOk());
 
@@ -175,8 +175,8 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = {"EDITOR"})
-    void testEditorForbiddenFromAdminOrders() throws Exception {
+    @WithMockUser(roles = {"QC_INSPECTOR"})
+    void testQcInspectorForbiddenFromAdminOrders() throws Exception {
         mockMvc.perform(get("/api/v1/admin/orders"))
                 .andExpect(status().isForbidden());
     }

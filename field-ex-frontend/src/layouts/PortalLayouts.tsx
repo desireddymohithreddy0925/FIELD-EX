@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 import { 
-  LayoutDashboard, Users, Tractor, Globe, Settings, ClipboardCheck, PackageSearch, 
+  LayoutDashboard, Users, Tractor, Globe, ClipboardCheck, PackageSearch, 
   Truck, FileText, Bell, Ship, Building, BookOpen, Warehouse, 
   Thermometer, Archive, BarChart, History, Box, ShieldCheck, CheckSquare, AlertTriangle, 
   Clock, Sprout, ArrowRight, Sparkles
@@ -63,16 +63,6 @@ export function PublicLayout() {
       iconBoxClass: "bg-[#DEE4DB] text-[#072C15]",
       badgeClass: "bg-[#1F4229] text-[#D2FBD7]",
       icon: LayoutDashboard,
-    },
-    {
-      title: "Produce & Variety Editor",
-      description: "Manage fresh produce lines, fruit varieties, Brix sweetness ratings, and harvest seasons.",
-      path: "/editor",
-      role: "EDITOR",
-      badge: "Editorial Desk",
-      iconBoxClass: "bg-[#FFDBC9] text-[#532200]",
-      badgeClass: "bg-[#FFDBC9] text-[#532200]",
-      icon: BookOpen,
     },
   ]
 
@@ -565,9 +555,6 @@ export function PublicLayout() {
             <Link to="/manager" className="font-bold text-xs leading-4 tracking-[0.4px] text-[#424842] hover:text-[#1B1C19] transition-colors">
               Manager
             </Link>
-            <Link to="/editor" className="font-bold text-xs leading-4 tracking-[0.4px] text-[#424842] hover:text-[#1B1C19] transition-colors">
-              Editor
-            </Link>
             <Link to="/qc" className="font-bold text-xs leading-4 tracking-[0.4px] text-[#424842] hover:text-[#1B1C19] transition-colors">
               QC Lab
             </Link>
@@ -631,21 +618,6 @@ export function BuyerLayout() {
   return <AppLayout title="Buyer" navItems={buyerNav} />
 }
 
-// --- Engineer Layout ---
-const engineerNav = [
-  { name: 'Dashboard', path: '/engineer', icon: LayoutDashboard },
-  { name: 'Suppliers', path: '/engineer/suppliers', icon: Tractor },
-  { name: 'Procurement', path: '/engineer/procurement', icon: FileText },
-  { name: 'Batches', path: '/engineer/batches', icon: Box },
-  { name: 'Warehouses', path: '/engineer/warehouses', icon: Warehouse },
-  { name: 'Inventory', path: '/engineer/inventory', icon: PackageSearch },
-  { name: 'Operations', path: '/engineer/operations', icon: Settings },
-]
-
-export function EngineerLayout() {
-  return <AppLayout title="Engineer" navItems={engineerNav} />
-}
-
 // --- QC Inspector Layout ---
 const qcNav = [
   { name: 'Dashboard', path: '/qc', icon: LayoutDashboard },
@@ -690,18 +662,4 @@ const managerNav = [
 
 export function ManagerLayout() {
   return <AppLayout title="Manager" navItems={managerNav} />
-}
-
-// --- Editor Layout ---
-const editorNav = [
-  { name: 'Dashboard', path: '/editor', icon: LayoutDashboard },
-  { name: 'Produce Catalog', path: '/editor/catalog', icon: Globe },
-  { name: 'Varieties & Specs', path: '/editor/varieties', icon: Box },
-  { name: 'Farm Suppliers', path: '/editor/suppliers', icon: Tractor },
-  { name: 'Harvest Batches', path: '/editor/batches', icon: Archive },
-  { name: 'Packaging Protocols', path: '/editor/packaging', icon: BookOpen },
-]
-
-export function EditorLayout() {
-  return <AppLayout title="Editor" navItems={editorNav} />
 }

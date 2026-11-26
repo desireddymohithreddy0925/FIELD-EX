@@ -59,7 +59,7 @@ public class BuyerDocumentController {
     }
 
     @GetMapping("/order/{orderId}")
-    @PreAuthorize("hasAnyRole('BUYER', 'ADMIN', 'LOGISTICS', 'ENGINEER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('BUYER', 'ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Get all export documents for a specific order")
     public ResponseEntity<List<BuyerDocumentDto>> getDocumentsByOrder(@PathVariable UUID orderId) {
         Order order = orderRepository.findById(orderId)

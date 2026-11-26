@@ -19,7 +19,7 @@ public class DocumentController {
     private final DocumentGenerationService documentGenerationService;
 
     @PostMapping("/generate/{orderId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Generate export document for an order")
     public ResponseEntity<ExportDocument> generateDocument(
             @PathVariable UUID orderId,
@@ -30,7 +30,7 @@ public class DocumentController {
     }
 
     @GetMapping("/{documentId}/url")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'BUYER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'BUYER', 'MANAGER')")
     @Operation(summary = "Get download URL for a document")
     public ResponseEntity<Map<String, String>> getDownloadUrl(@PathVariable UUID documentId) {
         // In a real app, ensure IDOR checks if user is a buyer

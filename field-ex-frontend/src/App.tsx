@@ -11,20 +11,17 @@ import {
   PublicLayout,
   AdminLayout,
   BuyerLayout,
-  EngineerLayout,
   QcLayout,
   LogisticsLayout,
   ManagerLayout,
-  EditorLayout,
 } from './layouts/PortalLayouts'
 
 // Dashboards
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
-const EngineerDashboard = lazy(() => import('./pages/engineer/EngineerDashboard'))
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
 const QcDashboard = lazy(() => import('./pages/qc/QcDashboard'))
 const LogisticsDashboard = lazy(() => import('./pages/logistics/LogisticsDashboard'))
 const ManagerDashboard = lazy(() => import('./pages/manager/ManagerDashboard'))
-const EditorDashboard = lazy(() => import('./pages/editor/EditorDashboard'))
 
 // Buyer Pages
 const DashboardPage = lazy(() => import('./pages/buyer/DashboardPage'))
@@ -71,7 +68,7 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['ADMIN']} />}>
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
-                  <Route path="users" element={<PlaceholderPage name="System Users" />} />
+                  <Route path="users" element={<AdminUsersPage />} />
                   <Route path="suppliers" element={<PlaceholderPage name="Suppliers" />} />
                   <Route path="buyers" element={<PlaceholderPage name="Buyers" />} />
                   <Route path="catalog" element={<PlaceholderPage name="Catalog" />} />
@@ -107,19 +104,6 @@ function App() {
                   <Route path="customs" element={<CustomsPage />} />
                   <Route path="documents" element={<DocumentsPage />} />
                   <Route path="notifications" element={<NotificationsPage />} />
-                </Route>
-              </Route>
-
-              {/* Engineer Routes */}
-              <Route element={<RoleRoute allowedRoles={['ENGINEER']} />}>
-                <Route path="/engineer" element={<EngineerLayout />}>
-                  <Route index element={<EngineerDashboard />} />
-                  <Route path="suppliers" element={<PlaceholderPage name="Suppliers" />} />
-                  <Route path="procurement" element={<PlaceholderPage name="Procurement" />} />
-                  <Route path="batches" element={<PlaceholderPage name="Batches" />} />
-                  <Route path="warehouses" element={<PlaceholderPage name="Warehouses" />} />
-                  <Route path="inventory" element={<PlaceholderPage name="Inventory" />} />
-                  <Route path="operations" element={<PlaceholderPage name="Operations" />} />
                 </Route>
               </Route>
 
@@ -160,18 +144,6 @@ function App() {
                   <Route path="shipments" element={<PlaceholderPage name="Logistics Shipments" />} />
                   <Route path="customs" element={<PlaceholderPage name="Customs Clearance" />} />
                   <Route path="analytics" element={<PlaceholderPage name="Operational Analytics" />} />
-                </Route>
-              </Route>
-
-              {/* Editor Routes */}
-              <Route element={<RoleRoute allowedRoles={['EDITOR']} />}>
-                <Route path="/editor" element={<EditorLayout />}>
-                  <Route index element={<EditorDashboard />} />
-                  <Route path="catalog" element={<PlaceholderPage name="Produce Catalog Editor" />} />
-                  <Route path="varieties" element={<PlaceholderPage name="Varieties & Specs" />} />
-                  <Route path="suppliers" element={<PlaceholderPage name="Supplier Network" />} />
-                  <Route path="batches" element={<PlaceholderPage name="Harvest Batches" />} />
-                  <Route path="packaging" element={<PlaceholderPage name="Packaging Protocols" />} />
                 </Route>
               </Route>
 

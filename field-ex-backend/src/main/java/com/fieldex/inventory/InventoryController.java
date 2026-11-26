@@ -26,7 +26,7 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'QC_INSPECTOR', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'QC_INSPECTOR', 'MANAGER')")
     @Operation(summary = "Get all inventory with filters")
     public ResponseEntity<org.springframework.data.domain.Page<InventoryDto>> getAllInventories(
             com.fieldex.inventory.dto.InventoryFilter filter,
@@ -35,28 +35,28 @@ public class InventoryController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'QC_INSPECTOR', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'QC_INSPECTOR', 'MANAGER')")
     @Operation(summary = "Get inventory by ID")
     public ResponseEntity<InventoryDto> getInventoryById(@PathVariable UUID id) {
         return ResponseEntity.ok(inventoryService.getInventoryById(id));
     }
 
     @GetMapping("/batch/{batchId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'QC_INSPECTOR', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'QC_INSPECTOR', 'MANAGER')")
     @Operation(summary = "Get inventory by Batch ID")
     public ResponseEntity<InventoryDto> getInventoryByBatchId(@PathVariable UUID batchId) {
         return ResponseEntity.ok(inventoryService.getInventoryByBatchId(batchId));
     }
 
     @GetMapping("/{id}/transactions")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'QC_INSPECTOR', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'QC_INSPECTOR', 'MANAGER')")
     @Operation(summary = "Get inventory transaction history")
     public ResponseEntity<List<InventoryTransactionDto>> getTransactions(@PathVariable UUID id) {
         return ResponseEntity.ok(inventoryService.getTransactions(id));
     }
 
     @PostMapping("/batch/{batchId}/receive")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Receive new inventory for a batch")
     public ResponseEntity<InventoryDto> receiveBatch(
             @PathVariable UUID batchId,
@@ -67,7 +67,7 @@ public class InventoryController {
     }
 
     @PostMapping("/{id}/reserve")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Reserve inventory quantity")
     public ResponseEntity<InventoryDto> reserve(
             @PathVariable UUID id,
@@ -76,7 +76,7 @@ public class InventoryController {
     }
 
     @PostMapping("/{id}/release")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Release reserved inventory quantity")
     public ResponseEntity<InventoryDto> release(
             @PathVariable UUID id,
@@ -85,7 +85,7 @@ public class InventoryController {
     }
 
     @PostMapping("/{id}/pack")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Pack reserved inventory quantity")
     public ResponseEntity<InventoryDto> pack(
             @PathVariable UUID id,

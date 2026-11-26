@@ -16,8 +16,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/orders")
 @RequiredArgsConstructor
-@Tag(name = "Admin Order API", description = "Endpoints for admins and engineers to manage orders")
-@PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'LOGISTICS', 'MANAGER')")
+@Tag(name = "Admin Order API", description = "Endpoints for admins and operations managers to manage orders")
+@PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
 public class AdminOrderController {
 
     private final OrderService orderService;

@@ -28,21 +28,21 @@ public class ProcurementController {
     private final ProcurementService procurementService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Get all procurement orders")
     public ResponseEntity<Page<ProcurementOrderDto>> getAllOrders(Pageable pageable) {
         return ResponseEntity.ok(procurementService.getAllOrders(pageable));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Get procurement order by ID")
     public ResponseEntity<ProcurementOrderDto> getOrderById(@PathVariable UUID id) {
         return ResponseEntity.ok(procurementService.getOrderById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Create procurement order")
     public ResponseEntity<ProcurementOrderDto> createOrder(
             @Valid @RequestBody ProcurementOrderCreateRequest request,
@@ -53,7 +53,7 @@ public class ProcurementController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Update procurement order status")
     public ResponseEntity<ProcurementOrderDto> updateStatus(
             @PathVariable UUID id,
