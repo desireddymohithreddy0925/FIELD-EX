@@ -8,6 +8,7 @@ import {
   Loader2, ArrowLeft, CheckCircle2, MapPin, Calendar, 
   Thermometer, Clock, ShieldCheck, Send 
 } from 'lucide-react';
+import { getFruitMedia } from '../../utils/fruitMedia';
 
 export default function FruitDetailsPage() {
   const { id } = useParams();
@@ -24,18 +25,7 @@ export default function FruitDetailsPage() {
     }
   }, [id]);
 
-  const getFruitIcon = (name: string = '') => {
-    const lower = name.toLowerCase();
-    if (lower.includes('mango')) return '🥭';
-    if (lower.includes('grape')) return '🍇';
-    if (lower.includes('banana')) return '🍌';
-    if (lower.includes('pomegranate')) return '🍎';
-    if (lower.includes('orange') || lower.includes('mandarin') || lower.includes('citrus')) return '🍊';
-    if (lower.includes('papaya')) return '🍈';
-    if (lower.includes('guava')) return '🍐';
-    if (lower.includes('apple')) return '🍏';
-    return '🌱';
-  };
+
 
   if (loading) {
     return (
@@ -63,6 +53,7 @@ export default function FruitDetailsPage() {
 
   const seasonStr = fruit.season || (Array.isArray(fruit.seasons) ? fruit.seasons.join(', ') : 'Year-round');
   const varieties = fruit.varieties || [];
+  const media = getFruitMedia(fruit.name);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -90,14 +81,26 @@ export default function FruitDetailsPage() {
         {/* Left Column: Hero Icon & Origin Details */}
         <div className="md:col-span-1 space-y-6">
           <Card className="overflow-hidden border-border bg-card">
-            <div className="aspect-square bg-gradient-to-br from-agro-sand/80 to-agro-linen/60 flex flex-col items-center justify-center p-8 relative border-b border-border">
-              <span className="text-8xl drop-shadow-md transition-transform hover:scale-105 duration-300">
-                {getFruitIcon(fruit.name)}
-              </span>
+            <div className="aspect-square relative overflow-hidden bg-muted border-b border-border">
+              <img
+                src={media.image}
+                alt={media.alt || fruit.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
               <div className="absolute top-3 right-3">
-                <Badge variant="olive" className="text-[10px] font-semibold">
+                <Badge variant="olive" className="text-[10px] font-semibold bg-black/60 text-white backdrop-blur-sm border-white/20">
                   GlobalGAP Certified
                 </Badge>
+              </div>
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white">
+                <span className="font-semibold bg-black/50 px-2.5 py-1 rounded backdrop-blur-sm flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-agro-wheat" />
+                  {fruit.origin ? fruit.origin.split(',')[0] : media.origin.split(',')[0]}
+                </span>
+                <span className="font-semibold bg-primary/90 text-primary-foreground px-2 py-0.5 rounded backdrop-blur-sm text-[11px]">
+                  {media.highlight}
+                </span>
               </div>
             </div>
 
