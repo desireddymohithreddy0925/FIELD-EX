@@ -12,7 +12,6 @@ export default function CompanyProfilePage() {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     companyName: '',
-    email: '',
     contactPerson: '',
     phone: '',
     country: '',
@@ -26,7 +25,6 @@ export default function CompanyProfilePage() {
       setProfile(data);
       setFormData({
         companyName: data.companyName || '',
-        email: data.email || '',
         contactPerson: data.contactPerson || '',
         phone: data.phone || '',
         country: data.country || '',
@@ -47,17 +45,12 @@ export default function CompanyProfilePage() {
     e.preventDefault();
     try {
       setSaving(true);
-      const payload = {
-        ...formData,
-        email: formData.email || profile?.email || ''
-      };
-      const updated = await buyerApi.updateMyProfile(payload);
+      const updated = await buyerApi.updateMyProfile(formData);
       setProfile(updated);
       alert('Profile updated successfully');
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to update profile';
-      alert(msg);
+      alert('Failed to update profile');
     } finally {
       setSaving(false);
     }
