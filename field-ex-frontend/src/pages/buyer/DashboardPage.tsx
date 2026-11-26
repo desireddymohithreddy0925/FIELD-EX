@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, FileText, CheckCircle, ArrowRight, Sprout, Thermometer } from 'lucide-react';
+import { Package, FileText, CheckCircle, ArrowRight, Sprout, Thermometer, RefreshCw } from 'lucide-react';
 import { buyerApi } from '../../services/buyerApi';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
@@ -9,10 +9,28 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [quotations, setQuotations] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchLiveBuyerData = async () => {
+    setIsLoading(true);
+    try {
+      const [qData, oData] = await Promise.all([
+        buyerApi.getQuotations(0, 100).catch(() => ({ content: [] })),
+        buyerApi.getOrders(0, 100).catch(() => ({ content: [] })),
+      ]);
+      setQuotations(qData?.content || (Array.isArray(qData) ? qData : []));
+      setOrders(oData?.content || (Array.isArray(oData) ? oData : []));
+    } catch {
+      // Keep silent fallback
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    buyerApi.getQuotations(0, 100).then(data => setQuotations(data?.content || (Array.isArray(data) ? data : []))).catch(() => {});
-    buyerApi.getOrders(0, 100).then(data => setOrders(data?.content || (Array.isArray(data) ? data : []))).catch(() => {});
+    fetchLiveBuyerData();
+    const timer = setInterval(fetchLiveBuyerData, 4000);
+    return () => clearInterval(timer);
   }, []);
 
   const pendingQuotations = quotations.filter(q => q.status === 'REQUESTED' || q.status === 'SENT').length;
@@ -24,9 +42,15 @@ export default function DashboardPage() {
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-card border border-border shadow-soft">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent text-[11px] font-semibold text-primary mb-2">
-            <Sprout className="w-3 h-3 text-tertiary" />
-            <span>Commercial Buyer Console</span>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent text-[11px] font-semibold text-primary">
+              <Sprout className="w-3 h-3 text-tertiary" />
+              <span>Commercial Buyer Console</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 text-[11px] font-semibold border border-emerald-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Live Real-Time Stream</span>
+            </div>
           </div>
           <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-foreground">Buyer Dashboard</h2>
           <p className="text-muted-foreground text-sm mt-0.5">
@@ -35,6 +59,16 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchLiveBuyerData}
+            disabled={isLoading}
+            className="text-xs gap-1.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
           <Button asChild variant="outline" size="sm">
             <Link to="/buyer/catalog">Browse Produce Catalog</Link>
           </Button>

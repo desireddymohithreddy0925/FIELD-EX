@@ -140,4 +140,16 @@ export const adminApi = {
     });
     return res.data;
   },
+
+  // Logistics & Shipments
+  getShipments: async (): Promise<any> => {
+    const res = await api.get('/v1/shipments');
+    return res.data;
+  },
+
+  // Quality Control
+  getQualityInspections: async (): Promise<any> => {
+    const res = await api.get('/v1/quality');
+    return res.data;
+  },
 };
