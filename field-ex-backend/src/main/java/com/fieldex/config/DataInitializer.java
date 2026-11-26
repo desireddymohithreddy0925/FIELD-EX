@@ -155,6 +155,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedProduceCatalog() {
         if (fruitRepository.count() > 0) {
+            backfillMissingVarietyPricing();
             return;
         }
 
@@ -260,6 +261,53 @@ public class DataInitializer implements CommandLineRunner {
         fruitVarietyRepository.save(cavendish);
 
         log.info("Seeded default produce catalog: Mango, Pomegranate, Banana with export varieties.");
+    }
+
+    private void backfillMissingVarietyPricing() {
+        List<FruitVariety> varieties = fruitVarietyRepository.findAll();
+        boolean updated = false;
+        for (FruitVariety v : varieties) {
+            boolean dirty = false;
+            String name = v.getName() != null ? v.getName() : "";
+
+            if (v.getPricePerKg() == null) {
+                if (name.contains("Alphonso")) v.setPricePerKg(new BigDecimal("4.80"));
+                else if (name.contains("Kesar")) v.setPricePerKg(new BigDecimal("3.75"));
+                else if (name.contains("Bhagwa")) v.setPricePerKg(new BigDecimal("3.20"));
+                else if (name.contains("Grand Naine")) v.setPricePerKg(new BigDecimal("0.90"));
+                else v.setPricePerKg(new BigDecimal("2.50"));
+                dirty = true;
+            }
+            if (v.getCurrency() == null || v.getCurrency().isBlank()) {
+                v.setCurrency("USD");
+                dirty = true;
+            }
+            if (v.getAvailableQuantity() == null) {
+                if (name.contains("Alphonso")) v.setAvailableQuantity(25000.0);
+                else if (name.contains("Kesar")) v.setAvailableQuantity(18000.0);
+                else if (name.contains("Bhagwa")) v.setAvailableQuantity(40000.0);
+                else if (name.contains("Grand Naine")) v.setAvailableQuantity(60000.0);
+                else v.setAvailableQuantity(10000.0);
+                dirty = true;
+            }
+            if (v.getMinOrderQuantity() == null) {
+                if (name.contains("Bhagwa")) v.setMinOrderQuantity(1000.0);
+                else if (name.contains("Grand Naine")) v.setMinOrderQuantity(2000.0);
+                else v.setMinOrderQuantity(500.0);
+                dirty = true;
+            }
+            if (v.getUnit() == null || v.getUnit().isBlank()) {
+                v.setUnit("KG");
+                dirty = true;
+            }
+            if (dirty) {
+                fruitVarietyRepository.save(v);
+                updated = true;
+            }
+        }
+        if (updated) {
+            log.info("Backfilled missing pricePerKg, currency, stock, and MOQ on existing fruit varieties.");
+        }
     }
 
     private void seedWarehouses() {
