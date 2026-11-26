@@ -3,354 +3,222 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FIELD-EX | Enterprise Presentation Deck</title>
+  <title>FIELD-EX Presentation Deck</title>
   <style>
-    :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --primary: #10b981;
-      --primary-dark: #059669;
-      --accent: #f59e0b;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --border: #334155;
-    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background-color: #0f172a;
+      color: #f8fafc;
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-    header {
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-      background: rgba(15, 23, 42, 0.8);
-      backdrop-filter: blur(8px);
-    }
-    .logo {
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .logo span { color: var(--accent); }
-    .slide-indicator {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      font-variant-numeric: tabular-nums;
-    }
-    .deck-container {
-      flex: 1;
-      display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
-      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
     }
-    .slide {
-      display: none;
-      width: 100%;
-      max-width: 1000px;
-      min-height: 520px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 1.25rem;
-      padding: 3rem 3.5rem;
+    .slide-container {
+      width: 90vw;
+      max-width: 1100px;
+      height: 70vh;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      animation: fadeIn 0.3s ease-out;
-    }
-    .slide.active { display: flex; flex-direction: column; justify-content: center; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      line-height: 1.15;
-      margin-bottom: 1rem;
-      background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    h2 {
-      font-size: 1.85rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-      color: #e2e8f0;
       display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    h2::before {
-      content: "";
-      display: inline-block;
-      width: 6px;
-      height: 1.75rem;
-      background: var(--primary);
-      border-radius: 3px;
-    }
-    h3 { font-size: 1.25rem; color: var(--accent); margin-bottom: 1rem; font-weight: 600; }
-    p { font-size: 1.05rem; line-height: 1.6; color: var(--text-muted); margin-bottom: 1rem; }
-    ul { list-style: none; margin-bottom: 1.5rem; }
-    li {
-      font-size: 1.05rem;
-      line-height: 1.6;
-      margin-bottom: 0.75rem;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px;
       position: relative;
-      padding-left: 1.75rem;
+    }
+    .slide-header {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #10b981;
+      font-weight: 700;
+    }
+    .slide-content h1 {
+      font-size: 38px;
+      margin-top: 12px;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+    .slide-content h2 {
+      font-size: 22px;
+      color: #94a3b8;
+      margin-top: 8px;
+      font-weight: 400;
+    }
+    .slide-body {
+      margin-top: 24px;
+      font-size: 18px;
+      line-height: 1.6;
       color: #cbd5e1;
     }
-    li::before {
-      content: "▹";
-      position: absolute;
-      left: 0;
-      color: var(--primary);
-      font-size: 1.2rem;
-      top: -2px;
+    .slide-body ul {
+      margin-left: 24px;
+      margin-top: 12px;
     }
-    .badge-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
+    .slide-body li {
+      margin-bottom: 12px;
     }
-    .badge-card {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid var(--border);
-      border-radius: 0.75rem;
-      padding: 1rem;
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: #064e3b;
+      color: #34d399;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
     }
-    .badge-card strong { display: block; color: #fff; margin-bottom: 0.25rem; font-size: 0.95rem; }
-    .badge-card span { font-size: 0.85rem; color: var(--text-muted); }
-    .table-custom {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-      font-size: 0.95rem;
-    }
-    .table-custom th, .table-custom td {
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--border);
-      text-align: left;
-    }
-    .table-custom th { background: rgba(15, 23, 42, 0.8); color: #fff; }
-    .table-custom td { background: rgba(30, 41, 59, 0.4); color: #cbd5e1; }
-    .stat-row {
-      display: flex;
-      gap: 2rem;
-      margin-top: 1.5rem;
-    }
-    .stat-item {
-      flex: 1;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid var(--border);
-      padding: 1.25rem;
-      border-radius: 0.75rem;
-      text-align: center;
-    }
-    .stat-item .val { font-size: 2.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.25rem; }
-    .stat-item .lbl { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    footer {
-      padding: 1rem 2rem;
+    .footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-top: 1px solid var(--border);
-      background: rgba(15, 23, 42, 0.8);
+      border-top: 1px solid #334155;
+      padding-top: 16px;
+      font-size: 13px;
+      color: #64748b;
     }
-    .nav-btn {
-      background: var(--primary);
-      color: #fff;
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    button {
+      background: #334155;
+      color: #ffffff;
       border: none;
-      padding: 0.5rem 1.25rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      font-size: 0.875rem;
+      padding: 10px 20px;
+      border-radius: 8px;
       cursor: pointer;
+      font-weight: 600;
       transition: background 0.2s;
     }
-    .nav-btn:hover { background: var(--primary-dark); }
-    .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .controls { display: flex; gap: 0.5rem; }
+    button:hover {
+      background: #475569;
+    }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="logo">FIELD<span>-EX</span> <span style="font-weight: 400; font-size: 0.85rem; color: var(--text-muted); margin-left: 0.5rem;">Enterprise Agro-Export Platform</span></div>
-    <div class="slide-indicator" id="slideNum">Slide 1 of 10</div>
-  </header>
-
-  <main class="deck-container">
-    <!-- Slide 1 -->
-    <div class="slide active">
-      <p style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); font-weight: 700; font-size: 0.875rem;">Executive Presentation</p>
-      <h1>FIELD-EX Platform</h1>
-      <h3 style="color: #cbd5e1; font-weight: 400; margin-bottom: 2rem;">B2B International Agro-Export & Cold-Chain Supply Chain Management</h3>
-      <div class="stat-row">
-        <div class="stat-item"><div class="val">7</div><div class="lbl">Dedicated Portals</div></div>
-        <div class="stat-item"><div class="val">98/98</div><div class="lbl">Verified Tests Passing</div></div>
-        <div class="stat-item"><div class="val">100%</div><div class="lbl">Audit Trail Coverage</div></div>
-      </div>
+  <div class="slide-container" id="slideCard">
+    <div class="slide-header" id="slideHeader">Slide 1 of 10</div>
+    <div class="slide-content">
+      <div id="slideBadge"></div>
+      <h1 id="slideTitle">Loading...</h1>
+      <h2 id="slideSubtitle"></h2>
+      <div class="slide-body" id="slideBody"></div>
     </div>
-
-    <!-- Slide 2 -->
-    <div class="slide">
-      <h2>The Agro-Export Problem</h2>
-      <ul>
-        <li><strong>Perishability & Spoilage</strong>: High-value horticultural exports face 20-30% loss due to unmonitored cold-chain excursions.</li>
-        <li><strong>Commercial & Quality Disputes</strong>: Buyers overseas reject shipments due to lack of verifiable pre-shipment quality logs (Brix, firmness, defects).</li>
-        <li><strong>Export Documentation Friction</strong>: Manual processing of Phytosanitary Certificates, Bills of Lading, and Origin docs delays port clearance.</li>
-        <li><strong>Operational Silos</strong>: Disconnected communication between procurement, packhouses, QC labs, and overseas buyers creates costly blind spots.</li>
-      </ul>
+    <div class="footer">
+      <span>FIELD-EX Enterprise Agro-Export Platform</span>
+      <span id="slideCounter">1 / 10</span>
     </div>
+  </div>
 
-    <!-- Slide 3 -->
-    <div class="slide">
-      <h2>The FIELD-EX Solution</h2>
-      <p>A unified, role-governed digital operating system bridging farm-gate procurement to international port delivery.</p>
-      <div class="badge-grid">
-        <div class="badge-card"><strong>Transparent B2B Catalog</strong><span>Cultivar specs, sugar Brix ranges, and seasonal harvest windows.</span></div>
-        <div class="badge-card"><strong>Deterministic State Machines</strong><span>Order & shipment lifecycles with strict transition authorization.</span></div>
-        <div class="badge-card"><strong>Cold-Chain Telemetry</strong><span>Out-of-bounds excursion alerting (+1°C to +4°C tolerance).</span></div>
-        <div class="badge-card"><strong>Digital Document Vault</strong><span>Immutable links between batches, phyto-certs, and invoices.</span></div>
-      </div>
-    </div>
-
-    <!-- Slide 4 -->
-    <div class="slide">
-      <h2>7 Stakeholder Portals</h2>
-      <div class="badge-grid" style="grid-template-columns: repeat(2, 1fr);">
-        <div class="badge-card"><strong>1. International Buyer (/buyer)</strong><span>Browse cultivars, request quotations, track live reefer temperatures.</span></div>
-        <div class="badge-card"><strong>2. Operations Manager (/manager)</strong><span>Executive KPIs, throughput analytics, urgent orders queue approval.</span></div>
-        <div class="badge-card"><strong>3. Catalog Editor (/editor)</strong><span>Manage fruit lines, cultivars, export caliber, and season windows.</span></div>
-        <div class="badge-card"><strong>4. Quality Control (/qc)</strong><span>Digital inspection scoring (Brix, caliber, defect %), pass/fail quarantine.</span></div>
-        <div class="badge-card"><strong>5. Logistics (/logistics)</strong><span>Cold storage allocation, packaging milestones, export docs.</span></div>
-        <div class="badge-card"><strong>6. Systems Engineer (/engineer)</strong><span>System telemetry, actuator health, database connections.</span></div>
-        <div class="badge-card"><strong>7. Operations Admin (/admin)</strong><span>Global user management, role governance, system audit ledger.</span></div>
-      </div>
-    </div>
-
-    <!-- Slide 5 -->
-    <div class="slide">
-      <h2>Architecture & Tech Stack</h2>
-      <div class="badge-grid">
-        <div class="badge-card"><strong>Backend API</strong><span>Spring Boot 3, Java 21, Modular Monolith Architecture</span></div>
-        <div class="badge-card"><strong>Frontend Web</strong><span>React 19, TypeScript, Vite, Tailwind CSS</span></div>
-        <div class="badge-card"><strong>Data Layer</strong><span>PostgreSQL 17, Liquibase Changelogs, HikariCP</span></div>
-        <div class="badge-card"><strong>Audit & Security</strong><span>Hibernate Envers, Stateless JWT, Spring Security RBAC</span></div>
-      </div>
-      <p style="margin-top: 1.5rem; font-size: 0.95rem;">Designed for clean separation of concerns, transactional integrity, and zero schema drift.</p>
-    </div>
-
-    <!-- Slide 6 -->
-    <div class="slide">
-      <h2>Business Logic: Deterministic State Machines</h2>
-      <p>All core transactions are governed by deterministic finite state machine services:</p>
-      <ul>
-        <li><strong>B2B Order Lifecycle</strong>: <code>REQUESTED</code> ➔ <code>CONFIRMED</code> ➔ <code>PROCESSING</code> ➔ <code>PACKED</code> ➔ <code>IN_TRANSIT</code> ➔ <code>DELIVERED</code></li>
-        <li><strong>Strict Transition Authority</strong>: Only <code>ADMIN</code> and <code>MANAGER</code> can confirm or cancel orders; <code>EDITOR</code> is restricted to catalog management.</li>
-        <li><strong>Quality Gate Lock</strong>: Orders cannot progress to packaging or dispatch without verified QC laboratory approval.</li>
-      </ul>
-    </div>
-
-    <!-- Slide 7 -->
-    <div class="slide">
-      <h2>Enterprise Security & Integrity</h2>
-      <ul>
-        <li><strong>Defense in Depth</strong>: Method-level authorization via <code>@PreAuthorize</code> on 16+ controller endpoints.</li>
-        <li><strong>Concurrency Protection</strong>: Optimistic locking (<code>@Version</code>) prevents double-allocation of pallet lots under high traffic.</li>
-        <li><strong>Immutable Audit History</strong>: Hibernate Envers captures every record revision, actor ID, and timestamp.</li>
-        <li><strong>Automated DB Migrations</strong>: Liquibase ensures reproducible schema deployments across dev, test, and production.</li>
-      </ul>
-    </div>
-
-    <!-- Slide 8 -->
-    <div class="slide">
-      <h2>Test Suite & Quality Verification</h2>
-      <div class="stat-row">
-        <div class="stat-item"><div class="val">36</div><div class="lbl">Test Classes</div></div>
-        <div class="stat-item"><div class="val">98</div><div class="lbl">Tests Run</div></div>
-        <div class="stat-item"><div class="val">0</div><div class="lbl">Failures / Errors</div></div>
-      </div>
-      <p style="margin-top: 1.5rem;">Suites cover state machine enforcement, JWT authentication, RBAC authorization, packaging allocation, and concurrent transactions.</p>
-    </div>
-
-    <!-- Slide 9 -->
-    <div class="slide">
-      <h2>Scope Boundaries: What We Deferred & Why</h2>
-      <table class="table-custom">
-        <thead>
-          <tr><th>Feature</th><th>Current Implementation</th><th>Strategic Rationale</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Physical IoT Hardware</td><td>Simulated REST telemetry & alerts</td><td>Avoid premature hardware lab dependency</td></tr>
-          <tr><td>Live SWIFT Wire</td><td>State-machine contract escrow</td><td>Precludes international banking license hurdle</td></tr>
-          <tr><td>Satellite AIS Vessel Feed</td><td>Milestone waypoint progression</td><td>Avoids expensive commercial AIS subscriptions</td></tr>
-          <tr><td>Customs Government EDI</td><td>Verified digital certificate vault</td><td>Avoids proprietary government VPN dongles</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Slide 10 -->
-    <div class="slide">
-      <h2>Roadmap & Scaling</h2>
-      <ul>
-        <li><strong>Phase 2 (Q1 2027)</strong>: Physical BLE/LoRaWAN sensor integration and automated MQTT telemetry ingest.</li>
-        <li><strong>Phase 2 (Q2 2027)</strong>: APEDA/ICEGATE customs XML electronic filing integration.</li>
-        <li><strong>Phase 3 (Q3 2027)</strong>: On-premise edge computer vision models for automated optical grading at packhouse conveyor lines.</li>
-      </ul>
-      <p style="margin-top: 2rem; color: var(--primary); font-weight: 700; font-size: 1.25rem;">FIELD-EX — Transforming Perishable Agro-Export with Trust & Telemetry.</p>
-    </div>
-  </main>
-
-  <footer>
-    <div style="font-size: 0.85rem; color: var(--text-muted);">Use ← / → keys or buttons to navigate</div>
-    <div class="controls">
-      <button class="nav-btn" id="prevBtn" onclick="prevSlide()">Previous</button>
-      <button class="nav-btn" id="nextBtn" onclick="nextSlide()">Next</button>
-    </div>
-  </footer>
+  <div class="controls">
+    <button onclick="prevSlide()">← Previous</button>
+    <button onclick="nextSlide()">Next →</button>
+  </div>
 
   <script>
-    let current = 0;
-    const slides = document.querySelectorAll('.slide');
-    const total = slides.length;
-    const slideNum = document.getElementById('slideNum');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
+    const slides = [
+      {
+        badge: "Executive Overview",
+        title: "FIELD-EX Platform Architecture",
+        subtitle: "B2B International Agro-Export & Cold-Chain Supply Chain Platform",
+        body: "<p>A production-grade, domain-driven operating system designed to bridge Indian farm-gate procurement with overseas international markets across Europe, the Middle East, and Asia.</p><ul><li>Deterministic B2B State Machines for commercial orders and container reefers</li><li>Digital QC rubric scoring (Brix, caliber, firmness, defects)</li><li>Continuous cold-chain temperature telemetry monitoring</li><li>Digital export documentation vault & automated customs staging</li><li>Real-time Admin activity watchdog stream & operational calendar</li></ul>"
+      },
+      {
+        badge: "Industry Context",
+        title: "The Core Industry Pain Points",
+        subtitle: "Why perishable agricultural exports suffer catastrophic losses",
+        body: "<ul><li><strong>25%+ Post-Harvest Losses:</strong> Delicate crops like Alphonso mangoes, pomegranates, and table grapes degrade during uncontrolled transit.</li><li><strong>Cold-Chain Opacity:</strong> Buyers face blind transit; a single temperature excursion ruins an entire container.</li><li><strong>Commercial Quality Disputes:</strong> Rejections at destination ports due to undocumented quality degradation.</li><li><strong>Fragmented Communication:</strong> Disparate tools (WhatsApp, paper certificates, emails) leading to clearance demurrage.</li></ul>"
+      },
+      {
+        badge: "The Solution",
+        title: "The FIELD-EX Digital Operating System",
+        subtitle: "Unifying the value chain under strict role-based governance",
+        body: "<ul><li><strong>Transparent Produce Catalog & Price Fixing:</strong> Real-time FOB pricing, metric ton inventory, Brix sweetness ratings, and cultivar specifications.</li><li><strong>Deterministic State Machines:</strong> Strict finite state transitions enforcing payment verification, packhouse packing, and export dispatch.</li><li><strong>Operations Calendar API:</strong> End-to-end tracking of order placement, packhouse completion, vessel transit, and port arrival.</li><li><strong>Order Lifecycle History:</strong> Immutable audit trail of every status change, actor, and compliance note accessible to Admin & Manager.</li></ul>"
+      },
+      {
+        badge: "RBAC & Portals",
+        title: "5 Dedicated Stakeholder Portals",
+        subtitle: "Enterprise role separation with delegated managerial authority",
+        body: "<ul><li><strong>Operations Admin (<code>/admin</code>):</strong> Full system governance, unrestricted user provisioning, live watchdog event stream, price fixing, order lifecycle history.</li><li><strong>Operations Manager (<code>/manager</code>):</strong> Delegated role assignment (Buyer, QC, Logistics), catalog price fixing, order lifecycle history, operations calendar.</li><li><strong>International Buyer (<code>/buyer</code>):</strong> Browse produce cultivars & fixed prices, request RFQs, review orders, and track container telemetry.</li><li><strong>QC Inspector (<code>/qc</code>):</strong> Digital inspection scoring, Brix refractive testing, caliber grading, and quarantine enforcement.</li><li><strong>Logistics Director (<code>/logistics</code>):</strong> Cold storage allocation, pallet packaging, customs documentation, and port dispatch.</li></ul>"
+      },
+      {
+        badge: "Architecture",
+        title: "Robust Modular Monolith Architecture",
+        subtitle: "Modern, high-performance technology stack",
+        body: "<ul><li><strong>Backend:</strong> Java 25, Spring Boot 3.x, Spring Security (Stateless JWT), Spring Data JPA, Hibernate Envers, Liquibase.</li><li><strong>Frontend:</strong> React 19, TypeScript, Vite, Tailwind CSS, Recharts, Lucide Icons.</li><li><strong>Database:</strong> PostgreSQL 17 with Liquibase automated migrations; In-memory H2 for tests.</li><li><strong>Storage & Caching:</strong> Redis 7, MinIO S3 Object Storage, Mailpit.</li></ul>"
+      },
+      {
+        badge: "Commercial Governance",
+        title: "Catalog Variety Pricing & Quality Specs",
+        subtitle: "Live commercial controls for Admin and Operations Manager",
+        body: "<ul><li><strong>Price Fixing:</strong> Currency-denominated pricing per kg / MT (USD, EUR, GBP, AED, INR).</li><li><strong>Inventory Allocation:</strong> Live available stock and Minimum Order Quantity (MOQ) configuration.</li><li><strong>Quality Specs:</strong> Export Grade A/Extra, Brix sugar sweetness rating, and cultivar characteristics.</li><li><strong>Interactive Management:</strong> Modals for updating prices, quality parameters, and adding new varieties.</li></ul>"
+      },
+      {
+        badge: "Visibility & Tracking",
+        title: "Operations Calendar & Milestones API",
+        subtitle: "Complete operational visibility from farm-gate to consignee receipt",
+        body: "<ul><li><strong>Calendar Event Feed:</strong> Automatic aggregation of placed dates, payment receipts, packhouse completions, export dispatches, customs, and port arrivals.</li><li><strong>Carrier Telemetry:</strong> Vessel details, bill of lading numbers, container IDs, and port ETA.</li><li><strong>Interactive View:</strong> Milestone timeline cards with status filters accessible by Admin and Manager.</li></ul>"
+      },
+      {
+        badge: "Security & Auditing",
+        title: "Security, Role Delegation & Audit Watchdog",
+        subtitle: "Enterprise compliance and tamper-proof traceability",
+        body: "<ul><li><strong>Role Delegation:</strong> Admin assigns all roles; Manager provisions Buyer, QC Inspector, and Logistics roles.</li><li><strong>Protected HQ Accounts:</strong> Admin and Manager accounts cannot be escalated or modified by subordinate roles.</li><li><strong>Immutable Order Lifecycle History:</strong> Every transition records actor name, role, email, timestamp, and notes.</li><li><strong>Real-Time Watchdog Stream:</strong> Live activity feed on Admin Dashboard monitoring all auth, role, and order events.</li></ul>"
+      },
+      {
+        badge: "Verification",
+        title: "Automated Test Suite & Code Quality",
+        subtitle: "100% test pass rate with zero errors",
+        body: "<ul><li><strong>Backend Test Suite:</strong> 97 automated tests passing with 0 failures and 0 errors.</li><li><strong>State Machine & Concurrency:</strong> Strict validation of transition preconditions, optimistic locking, and access control.</li><li><strong>Frontend Build:</strong> Vite & React 19 build completed with 0 TypeScript compilation errors.</li><li><strong>Clean Startup:</strong> Deprecated Hibernate dialects and startup warnings eliminated.</li></ul>"
+      },
+      {
+        badge: "Roadmap",
+        title: "Summary & Strategic Roadmap",
+        subtitle: "Foundation ready for Phase 2 physical expansion",
+        body: "<ul><li><strong>Production Ready:</strong> Complete B2B export workflow, role delegation, catalog pricing, and calendar tracking.</li><li><strong>Phase 2 Planned Enhancements:</strong> Physical IoT hardware sensors and MQTT brokers, live banking SWIFT wire rails, and commercial satellite AIS vessel tracking feeds.</li></ul>"
+      }
+    ];
 
-    function update() {
-      slides.forEach((s, i) => s.classList.toggle('active', i === current));
-      slideNum.textContent = `Slide ${current + 1} of ${total}`;
-      prevBtn.disabled = current === 0;
-      nextBtn.disabled = current === total - 1;
-    }
+    let currentSlide = 0;
 
-    function nextSlide() {
-      if (current < total - 1) { current++; update(); }
+    function renderSlide() {
+      const slide = slides[currentSlide];
+      document.getElementById("slideHeader").innerText = `Slide ${currentSlide + 1} of ${slides.length}`;
+      document.getElementById("slideCounter").innerText = `${currentSlide + 1} / ${slides.length}`;
+      document.getElementById("slideBadge").innerHTML = slide.badge ? `<span class="badge">${slide.badge}</span>` : "";
+      document.getElementById("slideTitle").innerText = slide.title;
+      document.getElementById("slideSubtitle").innerText = slide.subtitle;
+      document.getElementById("slideBody").innerHTML = slide.body;
     }
 
     function prevSlide() {
-      if (current > 0) { current--; update(); }
+      if (currentSlide > 0) {
+        currentSlide--;
+        renderSlide();
+      }
     }
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
-      if (e.key === 'ArrowLeft') prevSlide();
+    function nextSlide() {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        renderSlide();
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") nextSlide();
+      if (e.key === "ArrowLeft") prevSlide();
     });
 
-    update();
+    renderSlide();
   </script>
 </body>
 </html>

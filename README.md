@@ -11,39 +11,69 @@ For in-depth analysis, interview findings, presentation material, and scope rati
 - 📋 [**Problem Statement & Stakeholder Interview Notes**](./docs/PROBLEM_STATEMENT_AND_INTERVIEW_NOTES.md): Industry pain points, interview findings with international importers, QC leads, logistics directors, and operations managers.
 - 📊 [**Presentation Slides (Markdown / Marp)**](./docs/SLIDES.md): 10-slide executive summary covering architecture, business logic, security, and roadmap.
 - 🖥️ [**Interactive Presentation Deck (HTML)**](./docs/slides.html): Self-contained slide deck presentation that can be opened directly in any browser with keyboard navigation.
-- 🎯 [**What We Have Not Built (And Why)**](./docs/WHAT_WE_HAVE_NOT_BUILT.md): Transparent, strategic analysis of scope boundaries (IoT hardware gateways, SWIFT rails, satellite AIS feeds) and architectural trade-offs.
+- 🎯 [**What We Have Not Built (And Why)**](./docs/WHAT_WE_HAVE_NOT_BUILT.md): Transparent, strategic analysis of scope boundaries (physical IoT hardware gateways, SWIFT wire rails, satellite AIS feeds) and architectural trade-offs.
 
 ---
 
 ## 🚀 Key Platform Capabilities
 
-1. **Deterministic B2B State Machines**:
-   - Strict transition graphs for order lifecycles (`REQUESTED` ➔ `CONFIRMED` ➔ `PROCESSING` ➔ `PACKED` ➔ `IN_TRANSIT` ➔ `DELIVERED`).
-   - Role-governed authorization: Only `ADMIN` and `MANAGER` can approve state transitions; `EDITOR` is restricted to produce catalog management.
-2. **Standardized Digital QC Inspections**:
+1. **Role Governance & Delegated Administration**:
+   - `ADMIN` maintains global, unrestricted governance: assigns all roles, monitors real-time system activity, and configures enterprise settings.
+   - `MANAGER` possesses delegated role assignment authority to provision and assign `BUYER`, `QC_INSPECTOR`, and `LOGISTICS` operators while HQ administrative accounts remain protected.
+   - Deprecated standalone `ENGINEER` and `EDITOR` roles were removed and consolidated into unified Admin and Operations Manager consoles.
+
+2. **Produce Catalog, Variety Quality & Commercial Price Fixing**:
+   - Comprehensive produce catalog with cultivar varieties (Alphonso, Kesar, Bhagwa, Grand Naine, Thompson Seedless, etc.).
+   - Interactive price fixing (`price_per_kg`, `currency`, `available_quantity`, `min_order_quantity`, `unit`).
+   - Granular quality specifications: Export Grade A/Extra, Brix sweetness rating (°Bx), and physical characteristics.
+   - Accessible by both `ADMIN` and `MANAGER` via `/admin/catalog` and `/manager/catalog`.
+
+3. **Operational Milestones & Calendar API**:
+   - Dedicated Calendar Engine (`GET /api/v1/calendar/events`) aggregating milestone dates:
+     - `ORDER_PLACED`: Initial procurement registration.
+     - `PAYMENT_CONFIRMED`: Financial confirmation.
+     - `PACKING_COMPLETE`: Packhouse sorting & pallet staging.
+     - `SHIPMENT_DISPATCHED`: Departure to export port.
+     - `CUSTOMS_CLEARED`: Customs phytosanitary inspection.
+     - `EXPECTED_DELIVERY`: Container port ETA.
+     - `ORDER_DELIVERED`: Consignee receipt and delivery confirmation.
+   - Interactive timeline calendar view at `/admin/calendar` and `/manager/calendar`.
+
+4. **Order Lifecycle Audit History (Admin & Manager Only)**:
+   - Dedicated endpoint `GET /api/v1/admin/orders/{id}/history` guarded by `@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")`.
+   - Immutable chronological audit trail of state transitions, actor name, actor email, actor role, notes, and timestamps.
+   - Accessible from Admin Orders Management and Order Details views.
+
+5. **Real-Time Admin Watchdog & Activity Audit Stream**:
+   - Admin observability stream (`GET /api/v1/admin/audit/recent` and `GET /api/v1/admin/audit/logs`) restricted to `ADMIN`.
+   - Live real-time dashboard widget monitoring authentication events, role changes, price updates, order transitions, and system executions.
+
+6. **Deterministic B2B State Machines**:
+   - Strict transition graphs for order lifecycles (`QUOTE_ACCEPTED` ➔ `PAYMENT_PENDING` ➔ `PAID` ➔ `PROCESSING` ➔ `PACKED` ➔ `DISPATCHED` ➔ `IN_TRANSIT` ➔ `CUSTOMS` ➔ `DELIVERED`).
+   - Role-governed authorization: State transitions strictly validated across Admin, Manager, and Logistics roles.
+
+7. **Standardized Digital QC Inspections**:
    - Pre-shipment batch scoring for sugar Brix (°Bx), pulp firmness (kg/cm²), fruit diameter caliber, visual defect percentage, and pest quarantine checks.
-3. **Cold-Chain & Telemetry Monitoring**:
+
+8. **Cold-Chain & Telemetry Monitoring**:
    - Out-of-bounds temperature and humidity excursion tracking (+1°C to +4°C tolerance) across warehouse cold rooms and reefer shipping containers.
-4. **Digital Export Document Vault**:
+
+9. **Digital Export Document Vault**:
    - Linked Phytosanitary Certificates, Certificates of Origin, Bills of Lading, and Commercial Invoices with lifecycle status tracking.
-5. **Immutable Audit Ledger**:
-   - Hibernate Envers tracks every entity revision, actor timestamp, and state transition history for dispute prevention.
 
 ---
 
-## 🔒 7 Stakeholder Portals & RBAC
+## 🔒 5 Dedicated Stakeholder Portals & RBAC Matrix
 
-FIELD-EX provides **7 dedicated portals** with strict role-based access control (RBAC):
+FIELD-EX provides **5 dedicated portals** with strict role-based access control (RBAC):
 
 | Portal | Role | Route | Key Functions & Responsibilities | Demo Login |
 | :--- | :--- | :--- | :--- | :--- |
-| **International Buyer** | `BUYER` | `/buyer` | Browse produce catalog, request quotations, view orders, track reefer temps | `buyer@field-ex.com` / `password123` |
-| **Operations Manager** | `MANAGER` | `/manager` | Executive KPI overview, volume throughput chart, urgent order queue approval | `manager@field-ex.com` / `password123` |
-| **Produce Catalog Editor** | `EDITOR` | `/editor` | Produce lines & varieties management, specifications, seasonal windows | `editor@field-ex.com` / `password123` |
-| **Operations Admin** | `ADMIN` | `/admin` | Global platform governance, system configuration, user role management | `admin@field-ex.com` / `password123` |
-| **QC Lab Inspector** | `QC_INSPECTOR` | `/qc` | Digital inspection rubric scoring (Brix, caliber, defects), lot quarantine | `qc@field-ex.com` / `password123` |
-| **Systems Engineer** | `ENGINEER` | `/engineer` | System telemetry, database metrics, health monitoring, service status | `eng@field-ex.com` / `password123` |
-| **Logistics Director** | `LOGISTICS` | `/logistics` | Cold storage room allocation, packaging schedules, export document vault | `logistics@field-ex.com` / `password123` |
+| **Operations Admin** | `ADMIN` | `/admin` | Unrestricted role assignment, live system watchdog stream, catalog price fixing, order lifecycle history, operations calendar | `admin@field-ex.com` / `password123` |
+| **Operations Manager** | `MANAGER` | `/manager` | Delegated role assignment (Buyer, QC, Logistics), produce price fixing, order lifecycle history, operations calendar, order approvals | `manager@field-ex.com` / `password123` |
+| **International Buyer** | `BUYER` | `/buyer` | Browse live produce catalog & fixed prices, RFQ quotations, order placement, shipment tracking, calendar milestones | `buyer@field-ex.com` / `password123` |
+| **QC Lab Inspector** | `QC_INSPECTOR` | `/qc` | Digital inspection rubric scoring (Brix, caliber, defects), lot approvals, and quarantine controls | `qc@field-ex.com` / `password123` |
+| **Logistics Director** | `LOGISTICS` | `/logistics` | Cold storage room allocation, packaging schedules, export document vault, port dispatch | `logistics@field-ex.com` / `password123` |
 
 ---
 
@@ -52,16 +82,17 @@ FIELD-EX provides **7 dedicated portals** with strict role-based access control 
 ```
                   ┌────────────────────────────────────────┐
                   │       React 19 + TypeScript (Vite)     │
-                  │   7 Role-Based Portals & Dashboards    │
+                  │   5 Role-Based Portals & Dashboards    │
                   └───────────────────┬────────────────────┘
                                       │ REST API / JWT
                   ┌───────────────────▼────────────────────┐
-                  │          Spring Boot 3 (Java 21)       │
+                  │          Spring Boot 3 (Java 25)       │
                   │         Modular Monolith Core          │
                   ├────────────────────────────────────────┤
                   │  Auth (RBAC)  │  State Machines (Order) │
                   │  QC Inspection│  Cold-Chain Telemetry   │
-                  │  Procurement  │  Audit Ledger (Envers)  │
+                  │  Calendar API │  Audit Stream / Envers  │
+                  │  Price Fixing │  Variety & Inventory    │
                   └─────────┬──────────────────┬───────────┘
                             │                  │
          ┌──────────────────▼──────┐   ┌───────▼─────────────────┐
@@ -70,19 +101,19 @@ FIELD-EX provides **7 dedicated portals** with strict role-based access control 
          └─────────────────────────┘   └─────────────────────────┘
 ```
 
-- **Backend**: Java 21, Spring Boot 3.x, Spring Security (Stateless JWT), Spring Data JPA, Hibernate Envers, Liquibase.
+- **Backend**: Java 25, Spring Boot 3.x, Spring Security (Stateless JWT), Spring Data JPA, Hibernate Envers, Liquibase.
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Recharts, Lucide Icons.
-- **Database**: PostgreSQL 17 (Live/Dev) with automated Liquibase migrations; In-memory H2 for tests.
+- **Database**: PostgreSQL 17 with Liquibase automated migrations; In-memory H2 for tests.
 - **Cache & Storage**: Redis 7, MinIO S3 Object Storage, Mailpit.
 
 ---
 
 ## 🧪 Automated Test Suite (100% Passing)
 
-The test suite covers unit logic, concurrency controls, role permissions, and full integration workflows:
+The test suite covers unit logic, concurrency controls, role permissions, state machines, and full integration workflows:
 
 - **Total Test Classes**: 36
-- **Total Tests Run**: **98**
+- **Total Tests Run**: **97**
 - **Failures / Errors**: **0 / 0**
 - **Test Status**: **`BUILD SUCCESS`**
 
@@ -93,74 +124,44 @@ cd field-ex-backend
 ```
 
 Key test suites include:
-- `OrderStateMachineServiceTest`: Verifies transitions for Manager/Admin and access rejection for Editor.
+- `OrderStateMachineServiceTest`: Verifies transitions across Admin/Manager/Logistics.
 - `AuthControllerTests`: Validates BCrypt hashing, JWT generation, registration, and role assignment.
-- `SecurityIntegrationTest`: Validates `@PreAuthorize` rules across all 7 role endpoints and prevents IDOR.
+- `SecurityIntegrationTest`: Validates `@PreAuthorize` rules across all role endpoints and prevents IDOR.
 - `InventoryConcurrencyTest`: Validates optimistic locking under concurrent order reservations.
 - `QualityInspectionControllerTests`, `ProcurementControllerTests`, `WarehouseControllerTests`.
 
 ---
 
-## 🏃 Getting Started
+## 🚀 Getting Started
 
-### Prerequisites
-- Java 21+ SDK
-- Node.js 20+ & npm
-- PostgreSQL 17 (or Docker)
+### 1. Prerequisites
+- Java 21 or Java 25
+- Node.js 18+ & npm
+- PostgreSQL 17 (port 5432)
 
-### 1. Run the Backend Server
+### 2. Start PostgreSQL
+```bash
+# If using Docker
+docker-compose up -d postgres
+```
+
+### 3. Start Backend
 ```bash
 cd field-ex-backend
 ./mvnw spring-boot:run
 ```
-The backend starts on `http://localhost:8080`. Seed data and default demo accounts are automatically initialized.
+*Backend runs on `http://localhost:8080`. API documentation available at `http://localhost:8080/swagger-ui.html`.*
 
-### 2. Run the Frontend Client
-In a separate terminal:
+### 4. Start Frontend
 ```bash
 cd field-ex-frontend
 npm install
 npm run dev
 ```
-The frontend is accessible at `http://localhost:5173`.
-
-### 3. Or Run with Docker Compose
-```bash
-docker compose up --build
-```
-This launches the frontend, backend, PostgreSQL (`field-ex-db`), Redis, MinIO, Mailpit, and Prometheus/Grafana.
+*Frontend runs on `http://localhost:5173`.*
 
 ---
 
-## 📂 Repository Structure
+## 📜 License & Compliance
 
-```text
-FIELD-EX/
-├── docs/                                  # Project Documentation & Artifacts
-│   ├── PROBLEM_STATEMENT_AND_INTERVIEW_NOTES.md  # Field research, personas & problem statement
-│   ├── SLIDES.md                          # Presentation deck in Markdown (Marp-ready)
-│   ├── slides.html                        # Self-contained interactive presentation
-│   └── WHAT_WE_HAVE_NOT_BUILT.md          # Technical trade-offs & deferred scope
-├── field-ex-backend/                      # Spring Boot REST API
-│   ├── src/main/java/com/fieldex/
-│   │   ├── auth/                          # JWT Authentication & Registration
-│   │   ├── config/                        # SecurityConfig & DataInitializer
-│   │   ├── user/                          # User entity & Role Enum (7 Roles)
-│   │   ├── buyer/                         # Buyer Portal APIs & Catalog
-│   │   ├── procurement/                   # Farm Procurement & Suppliers
-│   │   ├── quality/                       # QC Inspections & Lab Scoring
-│   │   ├── inventory/                     # Warehouse & Cold Storage
-│   │   ├── order/                         # B2B Order State Machine
-│   │   └── shipment/                      # Logistics, Packaging & Phyto Docs
-│   ├── src/main/resources/db/migration/   # Liquibase Changelog Migrations (01-24)
-│   └── pom.xml
-├── field-ex-frontend/                     # React 19 + TypeScript + Vite
-│   ├── src/
-│   │   ├── layouts/                       # PortalLayouts for all 7 roles
-│   │   ├── pages/                         # Role Dashboards (Buyer, Manager, Editor, etc.)
-│   │   ├── services/                      # Axios API Client & Auth Service
-│   │   └── components/                    # UI Components
-│   └── package.json
-├── docker-compose.yml                     # Multi-container orchestration
-└── README.md                              # Main platform documentation
-```
+Confidential & Proprietary — FIELD-EX International Agro-Export Logistics Platform. All rights reserved.

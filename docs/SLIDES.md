@@ -20,7 +20,7 @@ footer: "Confidential & Proprietary"
 - **Perishability & Post-Harvest Losses**: Over 25% of fresh horticultural produce degrades between farm harvest and international port arrival.
 - **Cold-Chain Opacity**: International buyers face "blind transit"—a single +4°C excursion destroys containerloads of Alphonso mangoes or table grapes.
 - **Quality & Commercial Disputes**: Discrepancies in Brix (°Bx), fruit size, or pest marks cause catastrophic destination claims and write-downs.
-- **Fragmented Communication**: Fragmented communication across WhatsApp, spreadsheets, and emails causes clearance delays and high demurrage fees.
+- **Fragmented Communication**: Communication scattered across WhatsApp, spreadsheets, and emails causes clearance delays and high port demurrage fees.
 
 ---
 
@@ -28,24 +28,23 @@ footer: "Confidential & Proprietary"
 
 **A unified, role-governed digital operating system bridging farm-gate procurement to international destination delivery.**
 
-- **Transparent B2B Catalog**: Real-time export cultivar specs, Brix grading, and seasonal calendars.
+- **Transparent B2B Catalog & Fixed Pricing**: Real-time export cultivar specs, Brix grading, metric tonnage inventory, and fixed FOB prices.
 - **Deterministic State Machines**: Strict order and shipment lifecycles with transition authorization checks.
-- **Integrated Cold-Chain Monitoring**: Temperature excursion alerts and audit trails.
-- **Customs & Documentation Hub**: Phytosanitary certificates, Bill of Lading, and invoices linked to physical batches.
+- **Operations Calendar API**: Real-time milestone tracking for order placement, packhouse packing, export dispatch, customs, and port delivery.
+- **Order Lifecycle History**: Immutable audit log of every state change, actor, and compliance note accessible to Admin and Manager.
+- **Real-Time Admin Watchdog**: Live system event stream for total platform observability.
 
 ---
 
-# 3. Dedicated Stakeholder Portals (7 Roles)
+# 3. Dedicated Stakeholder Portals (5 Roles)
 
-To guarantee operational security and focused workflows, FIELD-EX provides **7 role-specific portals**:
+To guarantee operational security and focused workflows, FIELD-EX provides **5 role-specific portals**:
 
-1. **International Buyer (`/buyer`)**: Browse cultivars, negotiate quotations, approve orders, and track reefer temps.
-2. **Operations Manager (`/manager`)**: Executive command center, operational KPIs, throughput charts, and order queue overrides.
-3. **Produce Catalog Editor (`/editor`)**: Manage produce lines, cultivars, specifications, and seasonal harvest windows.
-4. **Operations Admin (`/admin`)**: System-wide governance, global user access, and enterprise configuration.
-5. **Quality Control Lab (`/qc`)**: Digital inspection scoring (Brix, firmness, defects), lot approvals, and quarantine controls.
-6. **Systems Engineer (`/engineer`)**: Live system telemetry, service health, and audit logs.
-7. **Logistics Director (`/logistics`)**: Cold storage room allocation, packaging schedules, and customs clearance.
+1. **Operations Admin (`/admin`)**: Global governance, unrestricted user provisioning, live system watchdog stream, catalog price fixing, order lifecycle history.
+2. **Operations Manager (`/manager`)**: Delegated role assignment (Buyer, QC, Logistics), produce price fixing, order lifecycle history, operations calendar.
+3. **International Buyer (`/buyer`)**: Browse cultivars, review fixed prices, submit RFQs, accept quotations, track shipments and calendar milestones.
+4. **Quality Control Lab (`/qc`)**: Digital inspection scoring (Brix, firmness, defects), lot approvals, and quarantine controls.
+5. **Logistics Director (`/logistics`)**: Cold storage room allocation, packaging schedules, and customs clearance.
 
 ---
 
@@ -54,16 +53,17 @@ To guarantee operational security and focused workflows, FIELD-EX provides **7 r
 ```
                   ┌────────────────────────────────────────┐
                   │       React 19 + TypeScript (Vite)     │
-                  │   7 Role-Based Portals & Dashboards    │
+                  │   5 Role-Based Portals & Dashboards    │
                   └───────────────────┬────────────────────┘
                                       │ REST API / JWT
                   ┌───────────────────▼────────────────────┐
-                  │          Spring Boot 3 (Java 21)       │
+                  │          Spring Boot 3 (Java 25)       │
                   │         Modular Monolith Core          │
                   ├────────────────────────────────────────┤
                   │  Auth (RBAC)  │  State Machines (Order) │
                   │  QC Inspection│  Cold-Chain Telemetry   │
-                  │  Procurement  │  Audit Ledger (Envers)  │
+                  │  Calendar API │  Audit Stream / Envers  │
+                  │  Price Fixing │  Variety & Inventory    │
                   └─────────┬──────────────────┬───────────┘
                             │                  │
          ┌──────────────────▼──────┐   ┌───────▼─────────────────┐
@@ -78,75 +78,75 @@ To guarantee operational security and focused workflows, FIELD-EX provides **7 r
 
 Every critical lifecycle is governed by a **strict finite state machine**:
 
-### B2B Order Lifecycle:
-`REQUESTED` ➔ `CONFIRMED` ➔ `PROCESSING` ➔ `PACKED` ➔ `IN_TRANSIT` ➔ `DELIVERED` *(or `CANCELLED`)*
-- Only `ADMIN` and `MANAGER` can confirm or cancel orders.
-- Orders cannot transition to `PACKED` without verified QC batch approval.
-
-### Quality Inspection Lifecycle:
-`PENDING_INSPECTION` ➔ `INSPECTION_IN_PROGRESS` ➔ `APPROVED` / `REJECTED`
-- Automatic rejection if Brix sugar content is below threshold or pest larvae detected.
+- **Order State Machine**:
+  `QUOTE_ACCEPTED` ➔ `PAYMENT_PENDING` ➔ `PAID` ➔ `PROCESSING` ➔ `PACKED` ➔ `DISPATCHED` ➔ `IN_TRANSIT` ➔ `CUSTOMS` ➔ `DELIVERED`
+- **Shipment State Machine**:
+  `PREPARING` ➔ `PACKED` ➔ `DISPATCHED` ➔ `IN_TRANSIT` ➔ `CUSTOMS_HOLD` ➔ `DELIVERED`
+- **Quality Inspection Lifecycle**:
+  `PENDING_INSPECTION` ➔ `IN_PROGRESS` ➔ `APPROVED` / `REJECTED` (Triggers cold storage quarantine)
 
 ---
 
-# 6. Enterprise Data Integrity & Security
+# 6. Commercial Price Fixing & Catalog Governance
 
-- **Stateless Authentication**: High-entropy JWT tokens with embedded role authorizations.
-- **Defense in Depth**: Spring Security `@PreAuthorize` method annotations across all service endpoints.
-- **Concurrency & Race Condition Control**: Optimistic locking (`@Version`) preventing double-allocation of pallet lots.
-- **Immutable Audit Logging**: Hibernate Envers tracks every mutation, actor timestamp, and revision history.
-- **Zero Schema Drift**: Version-controlled Liquibase changelog migrations.
-
----
-
-# 7. Automated Test Suite Verification
-
-Rigorous testing guarantees zero regressions across the codebase:
-
-- **Total Test Classes**: 36
-- **Total Tests Run**: **98**
-- **Failures / Errors**: **0 / 0** (100% Green)
-- **Status**: **`BUILD SUCCESS`**
-
-**Verified Suites**:
-- `OrderStateMachineServiceTest` (Manager approval & Editor forbidden enforcement)
-- `AuthControllerTests` (BCrypt password encoding, JWT claims, registration)
-- `SecurityIntegrationTest` (RBAC access rules across all 7 endpoints)
-- `PackagingServiceTest` & `ShipmentStateMachineServiceTest`
-- `InventoryConcurrencyTest` & `QualityInspectionControllerTests`
+- **Cultivar-Level Pricing**:
+  - Currency-denominated fixed pricing per kg / MT (`USD`, `EUR`, `GBP`, `AED`, `INR`).
+  - Available stock quantity and Minimum Order Quantity (MOQ) controls.
+- **Export Quality Specifications**:
+  - Quality Grade classification (Export Grade A, Super Grade, Jumbo).
+  - Sugar sweetness rating (°Bx) and post-harvest shelf-life tracking.
+- **Dual Management Access**:
+  - Both `ADMIN` and `MANAGER` can update pricing and variety specs on the fly via `/admin/catalog` and `/manager/catalog`.
 
 ---
 
-# 8. Live Portal Demonstration Highlights
+# 7. Operational Calendar & Milestones API
 
-- **International Buyer**: Real-time view of Alphonso Mango batches, live reefer pulp temp (+1.2°C), and verified phyto-certificates.
-- **Operations Manager**: Interactive volume throughput analytics, urgent orders queue, and inventory alerts.
-- **Catalog Editor**: Dynamic variety specifications (Brix, caliber, season window) with instant live filtering.
-- **QC Lab**: Pass/fail rubric evaluation automatically updating batch availability in warehouses.
-
----
-
-# 9. Pragmatic Scope: What We Deferred & Why
-
-1. **Physical IoT Gateways**: Modeled via clean REST API abstraction to enable hardware-agnostic Phase 2 integration.
-2. **Live SWIFT Banking Wire**: Full escrow state-machine lifecycle built without premature international banking licensing overhead.
-3. **Satellite AIS Vessel Tracking**: Milestone waypoint progression implemented without costly commercial maritime API subscriptions.
-4. **Native Mobile Codebases**: Unified responsive Web PWA provided single-source-of-truth across all devices.
-5. **Distributed Sharding**: Single PostgreSQL instance easily handles target scale without distributed commit latency.
+- **Calendar Event Stream (`/api/v1/calendar/events`)**:
+  - Automatically aggregates placed order dates, payment verifications, packhouse packing completions, port departures, and destination receipts.
+- **Carrier Telemetry & Port ETA**:
+  - Vessel tracking, bill of lading numbers, container numbers, and estimated port arrival dates.
+- **Role Scoping**:
+  - Buyers see their own procurement milestones; Admins and Managers monitor all global shipments.
 
 ---
 
-# 10. Future Roadmap & Scaling
+# 8. Enterprise Role Delegation & Security
 
-- **Phase 2 (Q1 2027)**:
-  - Integration of physical BLE/LoRaWAN temperature sensors with automated MQTT ingest.
-  - Integration with APEDA/ICEGATE customs XML electronic filing.
-- **Phase 3 (Q2 2027)**:
-  - Computer vision edge models for automated optical fruit sorting at conveyor belts.
-  - Smart-contract escrow release upon port RFID gate-in confirmation.
+- **Strict Role-Based Access Control**:
+  - Self-assignment of staff roles is blocked at the gateway level.
+  - `ADMIN` provisions and assigns all roles across the enterprise.
+  - `MANAGER` holds delegated authority to provision `BUYER`, `QC_INSPECTOR`, and `LOGISTICS` roles.
+  - Privileged HQ accounts (`ADMIN`, `MANAGER`) are protected against tampering.
+- **Immutable Order Lifecycle History**:
+  - Every status change records the actor, email, role, reason notes, and UTC timestamp.
+  - Restricted strictly to `ADMIN` and `MANAGER`.
 
 ---
 
-# FIELD-EX
-### The Future of Resilient Global Agro-Export
-*Thank you! Questions & Discussion.*
+# 9. Verification & Code Quality
+
+- **Backend Automated Test Suite**:
+  - **97 tests passing (100% success rate, 0 failures, 0 errors)**.
+  - Unit tests, state machine transitions, concurrency locks, security `@PreAuthorize` verification.
+- **Clean Production Build**:
+  - Frontend built with Vite and TypeScript with 0 compilation errors.
+  - Deprecated dialects and verbose startup queries eliminated.
+
+---
+
+# 10. Summary & Immediate Next Steps
+
+- **Completed**:
+  - Full B2B export workflow from quotation to delivery.
+  - Manager role assignment delegation.
+  - Produce catalog variety pricing and inventory.
+  - Real-time Admin watchdog stream.
+  - Operational calendar and order lifecycle history.
+- **Phase 2 Expansion**:
+  - Physical IoT hardware gateway integration.
+  - Live banking SWIFT rails.
+  - Commercial AIS satellite vessel tracking feeds.
+
+---
+### Thank You — FIELD-EX Engineering Team

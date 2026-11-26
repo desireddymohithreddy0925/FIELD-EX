@@ -12,7 +12,7 @@ International agro-export—specifically the export of high-value perishable pro
 3. **Complex Cross-Border Documentation & Customs Delays**:
    Exporting fresh agricultural produce requires synchronized Phytosanitary Certificates, Certificates of Origin, Bill of Lading, Packing Lists, Commercial Invoices, and Fumigation Certificates. Manual paper-based or disjointed email handoffs cause clearance delays at ports, destroying shelf-life.
 4. **Disconnected Stakeholders & Disparate Tools**:
-   Procurement officers, quality inspectors, cold-storage warehouse supervisors, logistics coordinators, commercial editors, and international buyers operate across disconnected spreadsheets, WhatsApp messages, and phone calls without a centralized system of record.
+   Procurement officers, quality inspectors, cold-storage warehouse supervisors, logistics coordinators, commercial merchandisers, and international buyers operate across disconnected spreadsheets, WhatsApp messages, and phone calls without a centralized system of record.
 
 ---
 
@@ -26,21 +26,24 @@ To architect a resilient, domain-driven platform, qualitative interviews were co
   > *"When ordering 20 metric tons of Alphonso mangoes, my biggest risk is blind transit. Once the container leaves Mumbai or Nhava Sheva, I often receive zero reliable updates until it docks in Felixstowe 18 days later. If the pulp temperature crossed +8°C, the fruit arrives overripe or spoiled."*
   > *"I need an online portal where I can review verifiable quality inspection sheets, track my live container temperature, download phytosanitary certifications, and accept quotation contracts instantly."*
 - **Derived System Requirements**:
-  - Transparent B2B Produce Catalog with seasonal availability, certifications, and specifications.
+  - Transparent B2B Produce Catalog with fixed FOB pricing, seasonal availability, certifications, and specifications.
   - Interactive quotation request and structured negotiation workflows.
   - Dedicated Buyer Portal showing real-time cold-chain sensor status, active order pipeline, and one-click export document downloads.
+  - Operational milestone calendar tracking order placement, packing, dispatch, port ETA, and receipt.
 
 ---
 
 ### Persona 2: Operations General Manager
 - **Representative**: Rajesh Kulkarni, VP of Operations, FIELD-EX Hub, Maharashtra.
 - **Key Quotes & Feedback**:
-  > *"My job is managing risk and margins. I need visibility into daily warehouse throughput, unfulfilled buyer demand, supplier delivery bottlenecks, and packing queue delays."*
-  > *"I cannot afford to have a buyer order confirmed if our packhouses don't have available fruit lots that meet that buyer's Grade-A export threshold."*
+  > *"My job is managing risk, margins, and operational velocity. I need direct visibility into daily warehouse throughput, unfulfilled buyer demand, supplier delivery bottlenecks, and packing queue delays."*
+  > *"I also need authority to fix cultivar prices and stock availability on the fly, provision buyer and logistics accounts without waiting for IT, and review the immutable audit history of every order transition."*
 - **Derived System Requirements**:
   - Executive Operations Command Center with operational KPIs (Export Volume, Order Fulfillment Rate, Active Lots).
-  - Authority to approve or override state transitions on orders, supplier procurements, and packaging allocations.
-  - Inventory velocity insights and near-expiry batch warning alarms.
+  - Delegated role assignment authority to provision and assign `BUYER`, `QC_INSPECTOR`, and `LOGISTICS` roles.
+  - Live Produce Catalog & Price Fixing console to adjust prices per kg/MT, currencies, available stock, and MOQ.
+  - Order Lifecycle History modal displaying every status transition, actor, role, and compliance note.
+  - Operations Calendar tracking order dates, packhouse packing, export dispatch, customs, and port delivery.
 
 ---
 
@@ -63,41 +66,17 @@ To architect a resilient, domain-driven platform, qualitative interviews were co
   > *"Customs clearing agents need instant access to the Phytosanitary Certificate, Bill of Lading, and Fumigation certificate. Missing one document costs $500 per day in port demurrage."*
 - **Derived System Requirements**:
   - Cold storage location management (rack, row, shelf, temperature monitoring).
-  - Logistics dashboard tracking packaging progress, pallet numbering, container seal tracking, and milestone updates (`DISPATCHED`, `IN_TRANSIT`, `CUSTOMS_CLEARED`, `DELIVERED`).
+  - Logistics dashboard tracking packaging progress, pallet numbering, container seal tracking, and milestone updates (`DISPATCHED`, `IN_TRANSIT`, `CUSTOMS`, `DELIVERED`).
   - Centralized digital document vault with status tracking (`DRAFT`, `SUBMITTED`, `VERIFIED`, `REJECTED`).
 
 ---
 
-### Persona 5: Produce Catalog & Variety Editor
-- **Representative**: Priya Sharma, Agronomy & Produce Merchandising Specialist.
+### Persona 5: System Administrator (HQ Governance)
+- **Representative**: Chief Information & Compliance Officer, FIELD-EX HQ.
 - **Key Quotes & Feedback**:
-  > *"Fruit cultivars differ radically. Alphonso differs from Kesar or Banganapalli in Brix level, season window, shelf-life, and optimum storage temperature (+13°C vs +4°C for pomegranates)."*
-  > *"I need an intuitive interface to manage produce lines, varieties, HS codes, seasonal calendar windows, and export packaging specifications without touching code or running database scripts."*
+  > *"For food safety audits and commercial compliance, we must maintain total visibility over the platform. The Admin must be able to see every action in real time—who logged in, who updated a price, who assigned a role, and who transitioned an order."*
+  > *"Administrative control over all roles must be absolute, ensuring that privileged accounts cannot be tampered with."*
 - **Derived System Requirements**:
-  - Dedicated Produce Variety Editor console with real-time variety management.
-  - Search, filter, category breakdown, and export specification guidelines.
-  - Guarded permissions restricting catalog editing solely to `EDITOR` and `ADMIN` roles.
-
----
-
-### Persona 6: Principal Systems Engineer
-- **Representative**: David Chen, Platform Architect & Systems Engineer.
-- **Key Quotes & Feedback**:
-  > *"With concurrent buyers placing orders and inventory lots being allocated in real-time, race conditions could cause double-allocation of the same pallet lot. We require optimistic locking and strict transactional integrity."*
-  > *"We need automated audit logging of every status transition and an immutable ledger of entity changes using Hibernate Envers."*
-- **Derived System Requirements**:
-  - Robust modular monolith backend (Spring Boot 3, Java 21, JPA/Hibernate Envers).
-  - Optimistic locking (`@Version`) on inventory and order records.
-  - Full automated regression test suite covering all state machines, security filters, and concurrent transactions.
-
----
-
-## 3. Synthesis: Key Design Decisions
-
-| Finding | Strategic Architectural Choice |
-| :--- | :--- |
-| Diverse stakeholder workflows | **Dedicated Role-Based Portals**: Clean isolation for Buyer, Admin, Manager, Editor, QC, Engineer, and Logistics. |
-| Compliance & Dispute Prevention | **Immutable Envers Auditing**: Every inspection, quotation price change, and shipment status update is permanently versioned. |
-| Critical State Transitions | **State Machine Service Layer**: Deterministic transition graphs for orders (`REQUESTED` → `CONFIRMED` → `PACKED` → `SHIPPED` → `DELIVERED`) and shipments with role-enforced authorizations. |
-| Zero Data Corruption | **PostgreSQL Constraints & Liquibase**: Strict schema-level check constraints and automated changelog migrations. |
-| Offline / Network Resiliency | **Optimized REST APIs & Fast Client-Side Routing**: React 19 + Vite frontend with instant optimistic state responses. |
+  - Unrestricted user provisioning and role assignment across all roles.
+  - Real-time System Activity Stream / Watchdog widget streaming live audit logs.
+  - Global catalog pricing and order governance.
