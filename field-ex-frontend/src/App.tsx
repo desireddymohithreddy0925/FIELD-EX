@@ -92,8 +92,8 @@ function App() {
                 </Route>
               </Route>
 
-              {/* Buyer Routes */}
-              <Route element={<RoleRoute allowedRoles={['BUYER']} />}>
+              {/* Buyer Routes (Accessible to Buyers, Managers, and Admins) */}
+              <Route element={<RoleRoute allowedRoles={['BUYER', 'MANAGER']} />}>
                 <Route path="/buyer" element={<BuyerLayout />}>
                   <Route index element={<DashboardPage />} />
                   <Route path="profile" element={<CompanyProfilePage />} />

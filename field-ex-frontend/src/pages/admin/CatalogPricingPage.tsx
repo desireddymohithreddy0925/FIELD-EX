@@ -104,7 +104,13 @@ export default function CatalogPricingPage() {
       );
       setFruits(fullFruits);
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'Failed to load fruits catalog.');
+      if (!err.response) {
+        setErrorMessage('Cannot connect to backend server. Please ensure Spring Boot is running on port 8080.');
+      } else if (err.response.status === 401 || err.response.status === 403) {
+        setErrorMessage('Session expired. Please log out and sign in again as Administrator.');
+      } else {
+        setErrorMessage(err.response?.data?.message || 'Failed to load fruits catalog.');
+      }
     } finally {
       setIsLoading(false);
     }

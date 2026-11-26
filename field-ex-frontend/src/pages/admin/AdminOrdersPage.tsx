@@ -54,7 +54,13 @@ export default function AdminOrdersPage() {
       const data = await adminApi.getAllOrders();
       setOrders(Array.isArray(data) ? data : (data?.content || []));
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'Failed to load orders.');
+      if (!err.response) {
+        setErrorMessage('Cannot connect to backend server. Please ensure Spring Boot is running on port 8080.');
+      } else if (err.response.status === 401 || err.response.status === 403) {
+        setErrorMessage('Session expired. Please log out and sign in again as Administrator.');
+      } else {
+        setErrorMessage(err.response?.data?.message || 'Failed to load orders.');
+      }
     } finally {
       setIsLoading(false);
     }

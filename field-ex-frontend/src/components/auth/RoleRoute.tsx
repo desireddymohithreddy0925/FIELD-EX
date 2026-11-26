@@ -16,7 +16,8 @@ export function RoleRoute({ allowedRoles }: RoleRouteProps) {
     return <Navigate to="/login" replace />
   }
 
-  const isAuthorized = allowedRoles.some((role) => hasRole(role))
+  // Administrators have global superuser visibility across all portals & views ("admin can see everything what is happening")
+  const isAuthorized = hasRole('ADMIN') || allowedRoles.some((role) => hasRole(role))
 
   if (!isAuthorized) {
     return <Navigate to="/unauthorized" replace />

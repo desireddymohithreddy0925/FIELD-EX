@@ -51,7 +51,13 @@ export default function AdminUsersPage() {
       const data = await adminApi.getUsers();
       setUsers(data);
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'Failed to load system users.');
+      if (!err.response) {
+        setErrorMessage('Cannot connect to backend server. Please ensure Spring Boot is running on port 8080 (./mvnw spring-boot:run).');
+      } else if (err.response.status === 401 || err.response.status === 403) {
+        setErrorMessage('Session expired or unauthorized. Please log out and sign in again as Administrator.');
+      } else {
+        setErrorMessage(err.response?.data?.message || 'Failed to load system users.');
+      }
     } finally {
       setIsLoading(false);
     }
