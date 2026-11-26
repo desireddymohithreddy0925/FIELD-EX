@@ -201,6 +201,15 @@ public class PackagingService {
         return null;
     }
 
+    @Transactional(readOnly = true)
+    public List<PackagingRecordDto> getAllPackagingRecords() {
+        return packagingRepository.findAll().stream()
+                .filter(PackagingRecord::isActive)
+                .sorted(java.util.Comparator.comparing(PackagingRecord::getCreatedAt, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
     private PackagingRecordDto mapToDto(PackagingRecord record) {
         return PackagingRecordDto.builder()
                 .id(record.getId())

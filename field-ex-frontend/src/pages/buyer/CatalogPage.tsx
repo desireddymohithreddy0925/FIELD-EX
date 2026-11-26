@@ -131,12 +131,18 @@ export default function CatalogPage() {
               >
                 <div>
                   <div className="aspect-[4/3] relative overflow-hidden bg-muted border-b border-border/60">
-                    <img
-                      src={media.image}
-                      alt={media.alt}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
+                    {media.image ? (
+                      <img
+                        src={media.image}
+                        alt={media.alt}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-agro-sand/80 to-agro-linen/60">
+                        <Sprout className="w-12 h-12 text-primary/60" />
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20 pointer-events-none" />
                     <div className="absolute top-3 right-3 flex items-center gap-1.5">
                       <Badge variant="olive" className="text-[10px] font-semibold bg-black/60 text-white backdrop-blur-sm border-white/20">
@@ -205,7 +211,7 @@ export default function CatalogPage() {
                 <div className="px-5 pb-4 pt-2 flex items-center justify-between border-t border-border/60 text-xs">
                   {varieties.some((v: any) => v.pricePerKg != null) ? (
                     <span className="font-mono font-bold text-primary">
-                      From ${Math.min(...varieties.filter((v: any) => v.pricePerKg != null).map((v: any) => Number(v.pricePerKg))).toFixed(2)}/kg
+                      From ${Math.min(...varieties.filter((v: any) => v.pricePerKg != null).map((v: any) => Number(v.pricePerKg))).toFixed(2)}/kg (${(Math.min(...varieties.filter((v: any) => v.pricePerKg != null).map((v: any) => Number(v.pricePerKg))) * 1000).toLocaleString()}/MT)
                     </span>
                   ) : (
                     <span className="text-muted-foreground font-medium flex items-center gap-1">

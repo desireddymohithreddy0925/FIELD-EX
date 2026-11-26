@@ -26,6 +26,10 @@ public class OrderShipmentListener {
         log.info("Handling ShipmentDispatchedEvent for Order: {}", event.getOrderId());
         Order order = orderRepository.findById(event.getOrderId()).orElse(null);
         if (order != null) {
+            if (order.getStatus() == OrderStatus.PROCESSING) {
+                orderStateMachineService.systemTransitionState(event.getOrderId(), OrderStatus.PACKED, "Shipment packed prior to dispatch");
+                order = orderRepository.findById(event.getOrderId()).orElse(order);
+            }
             if (order.getStatus() == OrderStatus.PACKED) {
                 orderStateMachineService.systemTransitionState(event.getOrderId(), OrderStatus.DISPATCHED, "Shipment dispatched");
             }
@@ -48,11 +52,7 @@ public class OrderShipmentListener {
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onShipmentDelivered(ShipmentDeliveredEvent event) {
-        log.info("Handling ShipmentDeliveredEvent for Order: {}", event.getOrderId());
-        Order order = orderRepository.findById(event.getOrderId()).orElse(null);
-        if (order != null && (order.getStatus() == OrderStatus.IN_TRANSIT || order.getStatus() == OrderStatus.CUSTOMS)) {
-            orderStateMachineService.systemTransitionState(event.getOrderId(), OrderStatus.DELIVERED, "Shipment delivered");
-        }
+        log.info("ShipmentDeliveredEvent recorded for Order: {}. Order DELIVERED state requires explicit buyer confirmation.", event.getOrderId());
     }
 }
 

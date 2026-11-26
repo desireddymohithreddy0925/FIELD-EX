@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Packing List</title>
+    <style>
+        body { font-family: sans-serif; font-size: 12px; color: #1c2419; }
+        .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #26472b; padding-bottom: 10px; }
+        .header h1 { margin: 0; color: #26472b; }
+        .details-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .details-table td { padding: 6px; vertical-align: top; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .items-table th, .items-table td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+        .items-table th { background-color: #f1f5f9; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>EXPORT PACKING LIST</h1>
+    <h2 th:text="'Order #: ' + ${order.orderNumber}">Order #</h2>
+</div>
+<table class="details-table">
+    <tr>
+        <td width="50%">
+            <strong>Packhouse / Shipper:</strong><br/>
+            FIELD-EX Certified Packhouse Network<br/>
+            JNPT Export Staging Hub, India
+        </td>
+        <td width="50%">
+            <strong>Consignee / Destination:</strong><br/>
+            <span th:text="${buyer != null ? buyer.companyName : 'Buyer'}">Company</span><br/>
+            <span th:text="${buyer != null ? buyer.destinationPort : ''}">Port</span><br/>
+            <span th:text="${buyer != null ? buyer.country : ''}">Country</span>
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Generated:</strong> <span th:text="${#temporals.format(generatedDate, 'yyyy-MM-dd HH:mm')}">Date</span></td>
+        <td><strong>Status:</strong> <span th:text="${order.status}">PROCESSING</span></td>
+    </tr>
+</table>
+<table class="items-table">
+    <thead>
+    <tr>
+        <th>Produce</th>
+        <th>Variety</th>
+        <th>Net Quantity (kg)</th>
+        <th>Grade</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="item : ${order.items}">
+        <td th:text="${item.fruit != null ? item.fruit.name : '-'}">Fruit</td>
+        <td th:text="${item.variety != null ? item.variety.name : '-'}">Variety</td>
+        <td th:text="${item.quantity}">1000</td>
+        <td th:text="${item.variety != null and item.variety.grade != null ? item.variety.grade : 'Export Grade A'}">Grade A</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

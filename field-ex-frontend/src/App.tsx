@@ -23,6 +23,20 @@ const CatalogPricingPage = lazy(() => import('./pages/admin/CatalogPricingPage')
 const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage'))
 const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'))
 const AdminQuotationsPage = lazy(() => import('./pages/admin/AdminQuotationsPage'))
+const AdminSuppliersPage = lazy(() => import('./pages/admin/AdminSuppliersPage'))
+const AdminBuyersPage = lazy(() => import('./pages/admin/AdminBuyersPage'))
+const AdminProcurementPage = lazy(() => import('./pages/admin/AdminProcurementPage'))
+const AdminQcPage = lazy(() => import('./pages/admin/AdminQcPage'))
+const AdminBatchesPage = lazy(() => import('./pages/admin/AdminBatchesPage'))
+const AdminWarehousesPage = lazy(() => import('./pages/admin/AdminWarehousesPage'))
+const AdminInventoryPage = lazy(() => import('./pages/admin/AdminInventoryPage'))
+const AdminColdChainPage = lazy(() => import('./pages/admin/AdminColdChainPage'))
+const AdminPackagingPage = lazy(() => import('./pages/admin/AdminPackagingPage'))
+const AdminDocumentsPage = lazy(() => import('./pages/admin/AdminDocumentsPage'))
+const AdminShipmentsPage = lazy(() => import('./pages/admin/AdminShipmentsPage'))
+const AdminCustomsPage = lazy(() => import('./pages/admin/AdminCustomsPage'))
+const AdminAuditPage = lazy(() => import('./pages/admin/AdminAuditPage'))
+const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'))
 const QcDashboard = lazy(() => import('./pages/qc/QcDashboard'))
 const LogisticsDashboard = lazy(() => import('./pages/logistics/LogisticsDashboard'))
 const ManagerDashboard = lazy(() => import('./pages/manager/ManagerDashboard'))
@@ -41,17 +55,6 @@ const ShipmentsPage = lazy(() => import('./pages/buyer/ShipmentsPage'))
 const CustomsPage = lazy(() => import('./pages/buyer/CustomsPage'))
 const DocumentsPage = lazy(() => import('./pages/buyer/DocumentsPage'))
 const NotificationsPage = lazy(() => import('./pages/buyer/NotificationsPage'))
-
-function PlaceholderPage({ name }: { name: string }) {
-  return (
-    <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-      <h3 className="text-xl font-heading font-semibold text-primary">{name}</h3>
-      <p className="mt-2 text-muted-foreground font-sans">
-        This is a placeholder page for the {name} feature.
-      </p>
-    </div>
-  )
-}
 
 function App() {
   return (
@@ -73,24 +76,24 @@ function App() {
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
                   <Route path="users" element={<AdminUsersPage />} />
-                  <Route path="suppliers" element={<PlaceholderPage name="Suppliers" />} />
-                  <Route path="buyers" element={<PlaceholderPage name="Buyers" />} />
+                  <Route path="suppliers" element={<AdminSuppliersPage />} />
+                  <Route path="buyers" element={<AdminBuyersPage />} />
                   <Route path="catalog" element={<CatalogPricingPage />} />
                   <Route path="calendar" element={<CalendarPage />} />
-                  <Route path="procurement" element={<PlaceholderPage name="Procurement" />} />
-                  <Route path="qc" element={<PlaceholderPage name="QC" />} />
-                  <Route path="batches" element={<PlaceholderPage name="Batches" />} />
-                  <Route path="warehouses" element={<PlaceholderPage name="Warehouses" />} />
-                  <Route path="inventory" element={<PlaceholderPage name="Inventory" />} />
-                  <Route path="cold-chain" element={<PlaceholderPage name="Cold Chain" />} />
+                  <Route path="procurement" element={<AdminProcurementPage />} />
+                  <Route path="qc" element={<AdminQcPage />} />
+                  <Route path="batches" element={<AdminBatchesPage />} />
+                  <Route path="warehouses" element={<AdminWarehousesPage />} />
+                  <Route path="inventory" element={<AdminInventoryPage />} />
+                  <Route path="cold-chain" element={<AdminColdChainPage />} />
                   <Route path="orders" element={<AdminOrdersPage />} />
                   <Route path="quotations" element={<AdminQuotationsPage />} />
-                  <Route path="packaging" element={<PlaceholderPage name="Packaging" />} />
-                  <Route path="documents" element={<PlaceholderPage name="Documents" />} />
-                  <Route path="shipments" element={<PlaceholderPage name="Shipments" />} />
-                  <Route path="customs" element={<PlaceholderPage name="Customs" />} />
-                  <Route path="audit" element={<PlaceholderPage name="Audit Log" />} />
-                  <Route path="analytics" element={<PlaceholderPage name="Analytics" />} />
+                  <Route path="packaging" element={<AdminPackagingPage />} />
+                  <Route path="documents" element={<AdminDocumentsPage />} />
+                  <Route path="shipments" element={<AdminShipmentsPage />} />
+                  <Route path="customs" element={<AdminCustomsPage />} />
+                  <Route path="audit" element={<AdminAuditPage />} />
+                  <Route path="analytics" element={<AdminAnalyticsPage />} />
                 </Route>
               </Route>
 
@@ -117,11 +120,11 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['QC_INSPECTOR']} />}>
                 <Route path="/qc" element={<QcLayout />}>
                   <Route index element={<QcDashboard />} />
-                  <Route path="inspections" element={<PlaceholderPage name="Inspections" />} />
-                  <Route path="grading" element={<PlaceholderPage name="Grading" />} />
-                  <Route path="failed-batches" element={<PlaceholderPage name="Failed Batches" />} />
-                  <Route path="reinspection" element={<PlaceholderPage name="Reinspection" />} />
-                  <Route path="history" element={<PlaceholderPage name="Quality History" />} />
+                  <Route path="inspections" element={<AdminQcPage />} />
+                  <Route path="grading" element={<AdminQcPage />} />
+                  <Route path="failed-batches" element={<AdminBatchesPage />} />
+                  <Route path="reinspection" element={<AdminQcPage />} />
+                  <Route path="history" element={<AdminQcPage />} />
                 </Route>
               </Route>
 
@@ -129,12 +132,12 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['LOGISTICS']} />}>
                 <Route path="/logistics" element={<LogisticsLayout />}>
                   <Route index element={<LogisticsDashboard />} />
-                  <Route path="warehouse" element={<PlaceholderPage name="Warehouse" />} />
-                  <Route path="packaging" element={<PlaceholderPage name="Packaging" />} />
-                  <Route path="shipments" element={<PlaceholderPage name="Shipments" />} />
-                  <Route path="customs" element={<PlaceholderPage name="Customs" />} />
-                  <Route path="delayed-shipments" element={<PlaceholderPage name="Delayed Shipments" />} />
-                  <Route path="delivery" element={<PlaceholderPage name="Delivery" />} />
+                  <Route path="warehouse" element={<AdminWarehousesPage />} />
+                  <Route path="packaging" element={<AdminPackagingPage />} />
+                  <Route path="shipments" element={<AdminShipmentsPage />} />
+                  <Route path="customs" element={<AdminCustomsPage />} />
+                  <Route path="delayed-shipments" element={<AdminShipmentsPage />} />
+                  <Route path="delivery" element={<AdminShipmentsPage />} />
                 </Route>
               </Route>
 
@@ -147,12 +150,12 @@ function App() {
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="orders" element={<AdminOrdersPage />} />
                   <Route path="quotations" element={<AdminQuotationsPage />} />
-                  <Route path="procurement" element={<PlaceholderPage name="Procurement Batches" />} />
-                  <Route path="inventory" element={<PlaceholderPage name="Inventory Control" />} />
-                  <Route path="qc" element={<PlaceholderPage name="QC Sign-Off" />} />
-                  <Route path="shipments" element={<PlaceholderPage name="Logistics Shipments" />} />
-                  <Route path="customs" element={<PlaceholderPage name="Customs Clearance" />} />
-                  <Route path="analytics" element={<PlaceholderPage name="Operational Analytics" />} />
+                  <Route path="procurement" element={<AdminProcurementPage />} />
+                  <Route path="inventory" element={<AdminInventoryPage />} />
+                  <Route path="qc" element={<AdminQcPage />} />
+                  <Route path="shipments" element={<AdminShipmentsPage />} />
+                  <Route path="customs" element={<AdminCustomsPage />} />
+                  <Route path="analytics" element={<AdminAnalyticsPage />} />
                 </Route>
               </Route>
 

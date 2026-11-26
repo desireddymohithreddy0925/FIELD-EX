@@ -1,6 +1,8 @@
 package com.fieldex.auth;
 
+import com.fieldex.audit.AuditLogService;
 import com.fieldex.auth.dto.AuthResponse;
+import com.fieldex.auth.dto.ChangePasswordRequest;
 import com.fieldex.auth.dto.LoginRequest;
 import com.fieldex.auth.dto.RegisterRequest;
 import com.fieldex.buyer.Buyer;
@@ -9,7 +11,7 @@ import com.fieldex.security.CustomUserDetails;
 import com.fieldex.security.JwtService;
 import com.fieldex.user.User;
 import com.fieldex.user.UserRepository;
-import com.fieldex.audit.AuditLogService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,18 +32,19 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+        if (userRepository.findByEmail(normalizedEmail).isPresent()) {
             throw new IllegalArgumentException("Email already in use");
         }
 
         User user = User.builder()
                 .name(request.getName())
-                .email(request.getEmail())
+                .email(normalizedEmail)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(com.fieldex.user.Role.BUYER)
                 .build();
         user.setActive(true);
-                
+
         userRepository.save(user);
 
         Buyer buyer = Buyer.builder()
@@ -53,7 +56,7 @@ public class AuthService {
         buyer.setActive(true);
         buyerRepository.save(buyer);
 
-        auditLogService.logEvent("REGISTER_USER", "USER", user.getId().toString(), "User registered: " + user.getEmail());
+        auditLogService.logEvent("REGISTER_USER", "USER", user.getId().toString(), "User registered as BUYER: " + user.getEmail());
 
         String jwtToken = jwtService.generateToken(new CustomUserDetails(user));
         return AuthResponse.builder()
@@ -66,16 +69,17 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
+                        normalizedEmail,
                         request.getPassword()
                 )
         );
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-                
+
         auditLogService.logEvent("LOGIN", "USER", user.getId().toString(), "User logged in: " + user.getEmail());
 
         String jwtToken = jwtService.generateToken(new CustomUserDetails(user));
@@ -86,5 +90,24 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .build();
+    }
+
+    @Transactional
+    public void changePassword(ChangePasswordRequest request, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Authenticated user not found"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+        if (request.getNewPassword().equals(request.getCurrentPassword())) {
+            throw new IllegalArgumentException("New password must differ from current password");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        auditLogService.logEvent("PASSWORD_CHANGED", "USER", user.getId().toString(),
+                "Password changed for account: " + user.getEmail());
     }
 }

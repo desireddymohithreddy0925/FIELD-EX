@@ -29,6 +29,13 @@ import java.util.UUID;
 import com.fieldex.customs.CustomsClearanceRepository;
 import com.fieldex.customs.CustomsStatus;
 import com.fieldex.customs.CustomsClearance;
+import com.fieldex.shipment.Shipment;
+import com.fieldex.shipment.ShipmentRepository;
+import com.fieldex.shipment.ShipmentStatus;
+import com.fieldex.shipment.ShipmentStatusHistory;
+import com.fieldex.shipment.ShipmentStatusHistoryRepository;
+
+import java.time.OffsetDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +55,12 @@ public class OrderStateMachineService {
     @Autowired(required = false)
     private AuditLogService auditLogService;
 
+    @Autowired(required = false)
+    private ShipmentRepository shipmentRepository;
+
+    @Autowired(required = false)
+    private ShipmentStatusHistoryRepository shipmentHistoryRepository;
+
     private static final Map<OrderStatus, Set<OrderStatus>> VALID_TRANSITIONS = new EnumMap<>(OrderStatus.class);
 
     static {
@@ -55,8 +68,8 @@ public class OrderStateMachineService {
         VALID_TRANSITIONS.put(OrderStatus.PAYMENT_PENDING, EnumSet.of(OrderStatus.PAID, OrderStatus.PROCESSING, OrderStatus.CANCELLED));
         VALID_TRANSITIONS.put(OrderStatus.PAID, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
         VALID_TRANSITIONS.put(OrderStatus.PROCESSING, EnumSet.of(OrderStatus.PACKED, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.PACKED, EnumSet.of(OrderStatus.DISPATCHED));
-        VALID_TRANSITIONS.put(OrderStatus.DISPATCHED, EnumSet.of(OrderStatus.IN_TRANSIT));
+        VALID_TRANSITIONS.put(OrderStatus.PACKED, EnumSet.of(OrderStatus.DISPATCHED, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.DISPATCHED, EnumSet.of(OrderStatus.IN_TRANSIT, OrderStatus.DELIVERED));
         VALID_TRANSITIONS.put(OrderStatus.IN_TRANSIT, EnumSet.of(OrderStatus.CUSTOMS, OrderStatus.DELIVERED));
         VALID_TRANSITIONS.put(OrderStatus.CUSTOMS, EnumSet.of(OrderStatus.DELIVERED));
         VALID_TRANSITIONS.put(OrderStatus.DELIVERED, EnumSet.noneOf(OrderStatus.class));
@@ -67,6 +80,52 @@ public class OrderStateMachineService {
     public Order transitionState(UUID orderId, OrderStatus targetStatus, String notes) {
         User actor = getCurrentUser();
         return doTransition(orderId, targetStatus, notes, actor, false);
+    }
+
+    @Transactional
+    public Order confirmDeliveryByBuyer(UUID orderId, String notes) {
+        User actor = getCurrentUser();
+        if (actor == null || actor.getRole() != Role.BUYER) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the assigned buyer can confirm delivery");
+        }
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+        if (order.getBuyer() == null || order.getBuyer().getUser() == null
+                || !order.getBuyer().getUser().getId().equals(actor.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized to confirm delivery for another buyer's order");
+        }
+        OrderStatus currentStatus = order.getStatus();
+        if (currentStatus != OrderStatus.DISPATCHED && currentStatus != OrderStatus.IN_TRANSIT && currentStatus != OrderStatus.CUSTOMS) {
+            throw new IllegalStateException("Order must be DISPATCHED, IN_TRANSIT, or CUSTOMS before buyer delivery confirmation. Current status: " + currentStatus);
+        }
+
+        executePreconditions(order, OrderStatus.DELIVERED);
+
+        String deliveryNote = (notes != null && !notes.isBlank()) ? notes : "Buyer confirmed physical delivery";
+        order.setStatus(OrderStatus.DELIVERED);
+        orderRepository.save(order);
+
+        OrderStatusHistory history = OrderStatusHistory.builder()
+                .order(order)
+                .status(OrderStatus.DELIVERED)
+                .actor(actor)
+                .notes(deliveryNote)
+                .build();
+        history.setActive(true);
+        historyRepository.save(history);
+
+        syncShipmentOnOrderTransition(order, OrderStatus.DELIVERED, deliveryNote);
+        eventPublisher.publish(new ShipmentDeliveredEvent(this, order.getId()));
+
+        if (auditLogService != null) {
+            try {
+                auditLogService.logEvent("BUYER_DELIVERY_CONFIRMED", "ORDER", order.getOrderNumber(),
+                        String.format("Buyer %s confirmed delivery for order %s (%s -> DELIVERED)",
+                                actor.getEmail(), order.getOrderNumber(), currentStatus));
+            } catch (Exception ignored) {
+            }
+        }
+        return order;
     }
 
     @Transactional
@@ -142,11 +201,13 @@ public class OrderStateMachineService {
             case DISPATCHED:
             case IN_TRANSIT:
             case CUSTOMS:
-            case DELIVERED:
                 if (role != Role.ADMIN && role != Role.MANAGER && role != Role.LOGISTICS) {
                     throw new org.springframework.security.access.AccessDeniedException("Unauthorized to update logistics status");
                 }
                 break;
+            case DELIVERED:
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "Only the buyer can confirm order delivery via buyer portal");
             case CANCELLED:
                 if (role != Role.ADMIN && role != Role.MANAGER) {
                     throw new org.springframework.security.access.AccessDeniedException("Only ADMIN or MANAGER can cancel orders");
@@ -181,15 +242,112 @@ public class OrderStateMachineService {
     private void executePostConditions(Order order, OrderStatus targetStatus) {
         if (targetStatus == OrderStatus.PROCESSING) {
             reserveInventory(order);
+            ensureShipmentInitialized(order);
         } else if (targetStatus == OrderStatus.CANCELLED) {
             releaseInventory(order);
+            syncShipmentOnOrderTransition(order, OrderStatus.CANCELLED, "Order cancelled");
+        } else if (targetStatus == OrderStatus.PACKED) {
+            syncShipmentOnOrderTransition(order, OrderStatus.PACKED, "Order packed at packhouse");
         } else if (targetStatus == OrderStatus.DISPATCHED) {
+            syncShipmentOnOrderTransition(order, OrderStatus.DISPATCHED, "Order dispatched from origin packhouse");
             eventPublisher.publish(new ShipmentDispatchedEvent(this, order.getId()));
+        } else if (targetStatus == OrderStatus.IN_TRANSIT) {
+            syncShipmentOnOrderTransition(order, OrderStatus.IN_TRANSIT, "Order in transit");
         } else if (targetStatus == OrderStatus.CUSTOMS) {
+            syncShipmentOnOrderTransition(order, OrderStatus.CUSTOMS, "Customs cleared");
             eventPublisher.publish(new CustomsClearedEvent(this, order.getId()));
         } else if (targetStatus == OrderStatus.DELIVERED) {
+            syncShipmentOnOrderTransition(order, OrderStatus.DELIVERED, "Delivered");
             eventPublisher.publish(new ShipmentDeliveredEvent(this, order.getId()));
         }
+    }
+
+    private void ensureShipmentInitialized(Order order) {
+        if (shipmentRepository == null || shipmentRepository.findByOrderId(order.getId()).isPresent()) {
+            return;
+        }
+        String destPort = (order.getBuyer() != null && order.getBuyer().getDestinationPort() != null && !order.getBuyer().getDestinationPort().isBlank())
+                ? order.getBuyer().getDestinationPort()
+                : "Port of Felixstowe";
+        String destCountry = toIsoCountryCode(order.getBuyer() != null ? order.getBuyer().getCountry() : null);
+
+        Shipment shipment = Shipment.builder()
+                .order(order)
+                .status(ShipmentStatus.PREPARING)
+                .originPort("JNPT Port, Mumbai")
+                .destinationPort(destPort)
+                .destinationCountry(destCountry)
+                .expectedDelivery(OffsetDateTime.now().plusDays(10))
+                .build();
+        shipment.setActive(true);
+        shipment = shipmentRepository.save(shipment);
+
+        if (shipmentHistoryRepository != null) {
+            ShipmentStatusHistory hist = ShipmentStatusHistory.builder()
+                    .shipment(shipment)
+                    .status(ShipmentStatus.PREPARING)
+                    .notes("Shipment automatically initialized on order acceptance")
+                    .build();
+            hist.setActive(true);
+            shipmentHistoryRepository.save(hist);
+        }
+    }
+
+    private void syncShipmentOnOrderTransition(Order order, OrderStatus orderStatus, String notes) {
+        if (shipmentRepository == null) return;
+        Shipment shipment = shipmentRepository.findByOrderId(order.getId()).orElse(null);
+        if (shipment == null) {
+            if (orderStatus == OrderStatus.CANCELLED || orderStatus == OrderStatus.DELIVERED) {
+                return;
+            }
+            ensureShipmentInitialized(order);
+            shipment = shipmentRepository.findByOrderId(order.getId()).orElse(null);
+            if (shipment == null) return;
+        }
+        ShipmentStatus target = switch (orderStatus) {
+            case PROCESSING -> ShipmentStatus.PREPARING;
+            case PACKED -> ShipmentStatus.PACKED;
+            case DISPATCHED -> ShipmentStatus.DISPATCHED;
+            case IN_TRANSIT -> ShipmentStatus.IN_TRANSIT;
+            case CUSTOMS -> ShipmentStatus.CUSTOMS;
+            case DELIVERED -> ShipmentStatus.DELIVERED;
+            case CANCELLED -> ShipmentStatus.CANCELLED;
+            default -> null;
+        };
+        if (target == null || shipment.getStatus() == target) return;
+
+        shipment.setStatus(target);
+        if (target == ShipmentStatus.DISPATCHED && shipment.getShipmentDate() == null) {
+            shipment.setShipmentDate(OffsetDateTime.now());
+        } else if (target == ShipmentStatus.DELIVERED) {
+            shipment.setActualDelivery(OffsetDateTime.now());
+        }
+        shipmentRepository.save(shipment);
+
+        if (shipmentHistoryRepository != null) {
+            ShipmentStatusHistory hist = ShipmentStatusHistory.builder()
+                    .shipment(shipment)
+                    .status(target)
+                    .notes(notes != null && !notes.isBlank() ? notes : ("Synchronized with Order status " + orderStatus))
+                    .build();
+            hist.setActive(true);
+            shipmentHistoryRepository.save(hist);
+        }
+    }
+
+    private String toIsoCountryCode(String country) {
+        if (country == null || country.isBlank()) return "GB";
+        String trimmed = country.trim();
+        if (trimmed.length() == 2) return trimmed.toUpperCase();
+        String lower = trimmed.toLowerCase();
+        if (lower.contains("united kingdom") || lower.contains("uk") || lower.contains("britain")) return "GB";
+        if (lower.contains("netherlands") || lower.contains("holland")) return "NL";
+        if (lower.contains("united arab") || lower.contains("uae") || lower.contains("dubai")) return "AE";
+        if (lower.contains("united states") || lower.contains("usa")) return "US";
+        if (lower.contains("germany")) return "DE";
+        if (lower.contains("singapore")) return "SG";
+        if (lower.contains("india")) return "IN";
+        return trimmed.substring(0, 2).toUpperCase();
     }
 
     private void reserveInventory(Order order) {

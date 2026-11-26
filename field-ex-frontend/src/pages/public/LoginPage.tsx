@@ -170,20 +170,11 @@ export function LoginPage() {
             <div className="flex items-center gap-1.5 mb-2.5">
               <KeyRound className="w-3.5 h-3.5 text-tertiary" />
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Quick Preset Fill
+                Demo Staff & Buyer Accounts
               </span>
             </div>
             
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => setPreset("admin@field-ex.com")}
-                className="p-2 rounded-lg bg-background hover:bg-muted border border-border text-left transition-colors"
-              >
-                <p className="font-semibold text-foreground">Admin</p>
-                <p className="text-[10px] text-muted-foreground truncate">admin@field-ex.com</p>
-              </button>
-
               <button
                 type="button"
                 onClick={() => setPreset("buyer@field-ex.com")}
@@ -214,12 +205,15 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={() => setPreset("logistics@field-ex.com")}
-                className="p-2 rounded-lg bg-background hover:bg-muted border border-border text-left transition-colors col-span-2"
+                className="p-2 rounded-lg bg-background hover:bg-muted border border-border text-left transition-colors"
               >
                 <p className="font-semibold text-foreground">Logistics</p>
                 <p className="text-[10px] text-muted-foreground truncate">logistics@field-ex.com</p>
               </button>
             </div>
+            <p className="text-[11px] text-muted-foreground mt-2.5 text-center">
+              System Administrator signs in directly with private admin credentials.
+            </p>
           </div>
 
           <div className="mt-5 text-center text-xs text-muted-foreground">

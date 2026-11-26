@@ -16,8 +16,8 @@ const NEXT_ALLOWED_TRANSITIONS: Record<string, string[]> = {
   PROCESSING: ['PACKED', 'CANCELLED'],
   PACKED: ['DISPATCHED'],
   DISPATCHED: ['IN_TRANSIT'],
-  IN_TRANSIT: ['CUSTOMS', 'DELIVERED'],
-  CUSTOMS: ['DELIVERED'],
+  IN_TRANSIT: ['CUSTOMS'],
+  CUSTOMS: [],
   DELIVERED: [],
   CANCELLED: [],
 };
@@ -380,7 +380,11 @@ export default function AdminOrdersPage() {
                             </Button>
                           ) : (
                             <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                              {order.status === 'DELIVERED' ? 'Fulfilled' : 'Closed'}
+                              {order.status === 'DELIVERED'
+                                ? 'Delivered (Buyer Confirmed)'
+                                : order.status === 'CUSTOMS'
+                                  ? 'Awaiting Buyer Delivery Confirmation'
+                                  : 'Closed'}
                             </Badge>
                           )}
                         </div>

@@ -22,6 +22,13 @@ public class PackagingController {
 
     private final PackagingService packagingService;
 
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
+    @Operation(summary = "Get all packaging records")
+    public List<PackagingRecordDto> getAllPackagingRecords() {
+        return packagingService.getAllPackagingRecords();
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @ResponseStatus(HttpStatus.CREATED)

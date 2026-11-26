@@ -1,5 +1,6 @@
 package com.fieldex.customs;
 
+import com.fieldex.customs.dto.CustomsClearanceDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -7,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -16,6 +18,13 @@ import java.util.UUID;
 public class CustomsController {
 
     private final CustomsClearanceService clearanceService;
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
+    @Operation(summary = "List all customs clearances")
+    public ResponseEntity<List<CustomsClearanceDto>> getAllClearances() {
+        return ResponseEntity.ok(clearanceService.getAllClearances());
+    }
 
     @GetMapping("/orders/{orderId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'BUYER', 'MANAGER')")

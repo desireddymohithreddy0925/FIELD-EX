@@ -10,35 +10,35 @@ interface JwtPayload {
   exp: number
 }
 
-function getInitialAuthState(): { token: string | null; roles: string[] } {
+function getInitialAuthState(): { token: string | null; email: string | null; roles: string[] } {
   const storedToken = localStorage.getItem("token")
   if (!storedToken) {
-    return { token: null, roles: [] }
+    return { token: null, email: null, roles: [] }
   }
   try {
     const decoded = jwtDecode<JwtPayload>(storedToken)
     if (decoded.exp * 1000 > Date.now()) {
-      return { token: storedToken, roles: decoded.roles || [] }
+      return { token: storedToken, email: decoded.sub || null, roles: decoded.roles || [] }
     }
     localStorage.removeItem("token")
   } catch {
     localStorage.removeItem("token")
   }
-  return { token: null, roles: [] }
+  return { token: null, email: null, roles: [] }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [authState, setAuthState] = useState<{ token: string | null; roles: string[] }>(getInitialAuthState)
+  const [authState, setAuthState] = useState<{ token: string | null; email: string | null; roles: string[] }>(getInitialAuthState)
 
   const login = useCallback((newToken: string) => {
     localStorage.setItem("token", newToken)
     const decoded = jwtDecode<JwtPayload>(newToken)
-    setAuthState({ token: newToken, roles: decoded.roles || [] })
+    setAuthState({ token: newToken, email: decoded.sub || null, roles: decoded.roles || [] })
   }, [])
 
   const logout = useCallback(() => {
     localStorage.removeItem("token")
-    setAuthState({ token: null, roles: [] })
+    setAuthState({ token: null, email: null, roles: [] })
     // Redirect handled by ProtectedRoute or can force reload
     window.location.href = '/login'
   }, [])
@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         token: authState.token,
+        email: authState.email,
         roles: authState.roles,
         isAuthenticated: !!authState.token,
         isLoading: false,

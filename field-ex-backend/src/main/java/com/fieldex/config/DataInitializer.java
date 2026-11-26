@@ -7,6 +7,9 @@ import com.fieldex.batch.FruitBatch;
 import com.fieldex.batch.FruitBatchRepository;
 import com.fieldex.buyer.Buyer;
 import com.fieldex.buyer.BuyerRepository;
+import com.fieldex.coldchain.ReadingSource;
+import com.fieldex.coldchain.TemperatureReading;
+import com.fieldex.coldchain.TemperatureReadingRepository;
 import com.fieldex.fruit.Fruit;
 import com.fieldex.fruit.FruitRepository;
 import com.fieldex.fruit.FruitVariety;
@@ -81,7 +84,10 @@ public class DataInitializer implements CommandLineRunner {
     private final FruitBatchRepository fruitBatchRepository;
     private final InventoryRepository inventoryRepository;
     private final ShipmentRepository shipmentRepository;
+    private final TemperatureReadingRepository temperatureReadingRepository;
     private final PasswordEncoder passwordEncoder;
+
+    private static final String SOLE_ADMIN_EMAIL = "desireddymohithreddy@gmail.com";
 
     @Override
     @Transactional
@@ -93,32 +99,69 @@ public class DataInitializer implements CommandLineRunner {
         seedOrders();
         seedPendingQuotations();
         seedShipments();
+        seedColdChainReadings();
         seedAuditLogs();
     }
 
-    private User upsertUser(String email, String name, Role role, String defaultPasswordHash) {
-        User user = userRepository.findByEmail(email).orElseGet(() -> User.builder()
-                .name(name)
-                .email(email)
-                .build());
-        user.setName(name);
-        user.setPasswordHash(defaultPasswordHash);
-        user.setRole(role);
-        user.setActive(true);
-        return userRepository.save(user);
+    private User seedUserIfMissing(String email, String name, Role role, String defaultPasswordHash) {
+        return userRepository.findByEmail(email).orElseGet(() -> {
+            User user = User.builder()
+                    .name(name)
+                    .email(email)
+                    .passwordHash(defaultPasswordHash)
+                    .role(role)
+                    .build();
+            user.setActive(true);
+            return userRepository.save(user);
+        });
     }
 
     private void seedUsers() {
         String defaultPasswordHash = passwordEncoder.encode("password123");
 
-        // Admin
-        upsertUser("admin@field-ex.com", "System Administrator", Role.ADMIN, defaultPasswordHash);
-        log.info("Seeded/Updated Admin user: admin@field-ex.com");
+        // Enforce Single-Admin Governance: only desireddymohithreddy@gmail.com may hold ADMIN role
+        for (User existingUser : userRepository.findAll()) {
+            if (existingUser.getRole() == Role.ADMIN
+                    && existingUser.getEmail() != null
+                    && !SOLE_ADMIN_EMAIL.equalsIgnoreCase(existingUser.getEmail())) {
+                existingUser.setRole(Role.BUYER);
+                existingUser.setActive(false);
+                userRepository.save(existingUser);
+                log.info("Demoted legacy ADMIN account {} to inactive BUYER.", existingUser.getEmail());
+            }
+        }
+
+        User soleAdmin = userRepository.findByEmail(SOLE_ADMIN_EMAIL).orElse(null);
+        if (soleAdmin == null) {
+            soleAdmin = User.builder()
+                    .name("Mohith Reddy (Admin)")
+                    .email(SOLE_ADMIN_EMAIL)
+                    .passwordHash(passwordEncoder.encode("mohith@0217"))
+                    .role(Role.ADMIN)
+                    .build();
+            soleAdmin.setActive(true);
+            userRepository.save(soleAdmin);
+            log.info("Seeded sole Admin user: {}", SOLE_ADMIN_EMAIL);
+        } else {
+            boolean updated = false;
+            if (soleAdmin.getRole() != Role.ADMIN) {
+                soleAdmin.setRole(Role.ADMIN);
+                soleAdmin.setPasswordHash(passwordEncoder.encode("mohith@0217"));
+                updated = true;
+            }
+            if (!soleAdmin.isActive()) {
+                soleAdmin.setActive(true);
+                updated = true;
+            }
+            if (updated) {
+                userRepository.save(soleAdmin);
+            }
+        }
 
         // Buyer
-        User buyerUser = upsertUser("buyer@field-ex.com", "Global Fresh Imports", Role.BUYER, defaultPasswordHash);
+        User buyerUser = seedUserIfMissing("buyer@field-ex.com", "Global Fresh Imports", Role.BUYER, defaultPasswordHash);
 
-        if (buyerRepository.findByUserId(buyerUser.getId()).isEmpty()) {
+        if (buyerUser.getRole() == Role.BUYER && buyerRepository.findByUserId(buyerUser.getId()).isEmpty()) {
             Buyer buyer = Buyer.builder()
                     .companyName("Global Fresh Imports Ltd")
                     .contactPerson("John Doe")
@@ -136,17 +179,14 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Seeded Buyer profile for buyer@field-ex.com");
         }
 
-        // QC Inspector
-        upsertUser("qc@field-ex.com", "Senior QC Inspector", Role.QC_INSPECTOR, defaultPasswordHash);
-        log.info("Seeded/Updated QC Inspector: qc@field-ex.com");
+        // QC Inspector (initial demo account only if missing)
+        seedUserIfMissing("qc@field-ex.com", "Senior QC Inspector", Role.QC_INSPECTOR, defaultPasswordHash);
 
-        // Logistics
-        upsertUser("logistics@field-ex.com", "Logistics Director", Role.LOGISTICS, defaultPasswordHash);
-        log.info("Seeded/Updated Logistics: logistics@field-ex.com");
+        // Logistics (initial demo account only if missing)
+        seedUserIfMissing("logistics@field-ex.com", "Logistics Director", Role.LOGISTICS, defaultPasswordHash);
 
-        // Manager
-        upsertUser("manager@field-ex.com", "Operations General Manager", Role.MANAGER, defaultPasswordHash);
-        log.info("Seeded/Updated Manager: manager@field-ex.com");
+        // Manager (initial demo account only if missing)
+        seedUserIfMissing("manager@field-ex.com", "Operations General Manager", Role.MANAGER, defaultPasswordHash);
 
         // Clean up deprecated roles if present
         userRepository.findByEmail("eng@field-ex.com").ifPresent(userRepository::delete);
@@ -692,12 +732,8 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedShipments() {
-        if (shipmentRepository.count() > 0) {
-            return;
-        }
-
         Order inTransitOrder = orderRepository.findByOrderNumber("ORD-2026-1003").orElse(null);
-        if (inTransitOrder != null) {
+        if (inTransitOrder != null && shipmentRepository.findByOrderId(inTransitOrder.getId()).isEmpty()) {
             Shipment s1 = Shipment.builder()
                     .order(inTransitOrder)
                     .status(ShipmentStatus.IN_TRANSIT)
@@ -714,6 +750,100 @@ public class DataInitializer implements CommandLineRunner {
             shipmentRepository.save(s1);
             log.info("Seeded live vessel transit shipment for ORD-2026-1003.");
         }
+
+        // Backfill missing shipments for any active accepted orders
+        for (Order order : orderRepository.findAll()) {
+            if (!order.isActive()) continue;
+            ShipmentStatus mappedStatus = switch (order.getStatus()) {
+                case PROCESSING -> ShipmentStatus.PREPARING;
+                case PACKED -> ShipmentStatus.PACKED;
+                case DISPATCHED -> ShipmentStatus.DISPATCHED;
+                case IN_TRANSIT -> ShipmentStatus.IN_TRANSIT;
+                case CUSTOMS -> ShipmentStatus.CUSTOMS;
+                default -> null;
+            };
+            if (mappedStatus != null && shipmentRepository.findByOrderId(order.getId()).isEmpty()) {
+                String destPort = order.getBuyer() != null && order.getBuyer().getDestinationPort() != null
+                        ? order.getBuyer().getDestinationPort() : "Port of Felixstowe";
+                String destCountry = toIsoCountryCode(order.getBuyer() != null ? order.getBuyer().getCountry() : null);
+                Shipment s = Shipment.builder()
+                        .order(order)
+                        .status(mappedStatus)
+                        .originPort("JNPT Port, Mumbai")
+                        .destinationPort(destPort)
+                        .destinationCountry(destCountry)
+                        .expectedDelivery(OffsetDateTime.now().plusDays(10))
+                        .build();
+                s.setActive(true);
+                shipmentRepository.save(s);
+                log.info("Backfilled {} shipment for active order {}.", mappedStatus, order.getOrderNumber());
+            }
+        }
+    }
+
+    private String toIsoCountryCode(String country) {
+        if (country == null || country.isBlank()) return "GB";
+        String trimmed = country.trim();
+        if (trimmed.length() == 2) return trimmed.toUpperCase();
+        String lower = trimmed.toLowerCase();
+        if (lower.contains("united kingdom") || lower.contains("uk") || lower.contains("britain")) return "GB";
+        if (lower.contains("netherlands") || lower.contains("holland")) return "NL";
+        if (lower.contains("united arab") || lower.contains("uae") || lower.contains("dubai")) return "AE";
+        if (lower.contains("united states") || lower.contains("usa")) return "US";
+        if (lower.contains("germany")) return "DE";
+        if (lower.contains("singapore")) return "SG";
+        if (lower.contains("india")) return "IN";
+        return trimmed.substring(0, 2).toUpperCase();
+    }
+
+    private void seedColdChainReadings() {
+        if (temperatureReadingRepository.count() > 0) {
+            return;
+        }
+        List<FruitBatch> batches = fruitBatchRepository.findAll();
+        List<Warehouse> warehouses = warehouseRepository.findAll();
+        if (batches.isEmpty() || warehouses.isEmpty()) {
+            return;
+        }
+        FruitBatch primaryBatch = batches.get(0);
+        Warehouse primaryWh = primaryBatch.getWarehouse() != null ? primaryBatch.getWarehouse() : warehouses.get(0);
+        Warehouse portWh = warehouses.size() > 1 ? warehouses.get(1) : primaryWh;
+
+        TemperatureReading r1 = TemperatureReading.builder()
+                .batch(primaryBatch)
+                .warehouse(primaryWh)
+                .temperature(new BigDecimal("12.80"))
+                .humidity(new BigDecimal("88.50"))
+                .timestamp(Instant.now().minusSeconds(14400))
+                .source(ReadingSource.IOT_SENSOR)
+                .notes("Packhouse precooling chamber nominal")
+                .build();
+        r1.setActive(true);
+
+        TemperatureReading r2 = TemperatureReading.builder()
+                .batch(primaryBatch)
+                .warehouse(primaryWh)
+                .temperature(new BigDecimal("13.10"))
+                .humidity(new BigDecimal("89.00"))
+                .timestamp(Instant.now().minusSeconds(7200))
+                .source(ReadingSource.IOT_SENSOR)
+                .notes("Staging bay holding optimal ethylene control")
+                .build();
+        r2.setActive(true);
+
+        TemperatureReading r3 = TemperatureReading.builder()
+                .batch(batches.size() > 1 ? batches.get(1) : primaryBatch)
+                .warehouse(portWh)
+                .temperature(new BigDecimal("2.40"))
+                .humidity(new BigDecimal("92.00"))
+                .timestamp(Instant.now().minusSeconds(3600))
+                .source(ReadingSource.IOT_SENSOR)
+                .notes("Reefer container pre-gate cold chain verified")
+                .build();
+        r3.setActive(true);
+
+        temperatureReadingRepository.saveAll(List.of(r1, r2, r3));
+        log.info("Seeded live Cold Chain IoT telemetry readings.");
     }
 
     private void seedAuditLogs() {
@@ -732,7 +862,7 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         auditLogRepository.save(AuditLog.builder()
-                .actor("admin@field-ex.com")
+                .actor(SOLE_ADMIN_EMAIL)
                 .action("ROLE_ASSIGNMENT")
                 .resourceType("USER")
                 .resourceId("manager@field-ex.com")

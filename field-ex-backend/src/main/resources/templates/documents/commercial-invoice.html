@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Commercial Invoice</title>
+    <style>
+        body { font-family: sans-serif; font-size: 12px; color: #1c2419; }
+        .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #26472b; padding-bottom: 10px; }
+        .header h1 { margin: 0; color: #26472b; }
+        .details-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .details-table td { padding: 6px; vertical-align: top; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .items-table th, .items-table td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+        .items-table th { background-color: #f1f5f9; }
+        .totals { width: 100%; text-align: right; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>COMMERCIAL INVOICE</h1>
+    <h2 th:text="'Order #: ' + ${order.orderNumber}">Order #</h2>
+</div>
+<table class="details-table">
+    <tr>
+        <td width="50%">
+            <strong>Exporter:</strong><br/>
+            FIELD-EX Agro Exports Ltd<br/>
+            JNPT Export Terminal, Navi Mumbai<br/>
+            India
+        </td>
+        <td width="50%">
+            <strong>Consignee / Buyer:</strong><br/>
+            <span th:text="${buyer != null ? buyer.companyName : 'Buyer'}">Company</span><br/>
+            <span th:text="${buyer != null ? buyer.address : ''}">Address</span><br/>
+            <span th:text="${buyer != null ? ((buyer.destinationCity != null ? buyer.destinationCity : '') + ', ' + (buyer.country != null ? buyer.country : '')) : ''}">City, Country</span>
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Issue Date:</strong> <span th:text="${#temporals.format(generatedDate, 'yyyy-MM-dd HH:mm')}">Date</span></td>
+        <td><strong>Currency:</strong> <span th:text="${order.currencyCode}">USD</span></td>
+    </tr>
+</table>
+<table class="items-table">
+    <thead>
+    <tr>
+        <th>Produce</th>
+        <th>Cultivar / Variety</th>
+        <th>Net Weight (kg)</th>
+        <th>Unit Price / kg</th>
+        <th>Line Total</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="item : ${order.items}">
+        <td th:text="${item.fruit != null ? item.fruit.name : '-'}">Fruit</td>
+        <td th:text="${item.variety != null ? item.variety.name : '-'}">Variety</td>
+        <td th:text="${item.quantity}">1000</td>
+        <td th:text="${item.unitPrice != null ? item.unitPrice : 0}">2.50</td>
+        <td th:text="${item.lineTotal != null ? item.lineTotal : (item.quantity != null and item.unitPrice != null ? item.quantity * item.unitPrice : 0)}">2500.00</td>
+    </tr>
+    </tbody>
+</table>
+<div class="totals">
+    <h3>Invoice Total: <span th:text="${order.totalAmount != null ? order.totalAmount : 0}">0.00</span> <span th:text="${order.currencyCode}">USD</span></h3>
+</div>
+</body>
+</html>

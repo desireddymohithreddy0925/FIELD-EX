@@ -72,8 +72,18 @@ public class QuotationService {
                 throw new IllegalArgumentException("Variety does not belong to the specified fruit");
             }
 
+            BigDecimal effectiveQtyKg = itemReq.getQuantity();
+            if (itemReq.getUnit() != null) {
+                String u = itemReq.getUnit().trim().toUpperCase();
+                if ("MT".equals(u) || "TONNE".equals(u) || "TONNES".equals(u) || "TON".equals(u)) {
+                    effectiveQtyKg = itemReq.getQuantity().multiply(BigDecimal.valueOf(1000));
+                }
+            }
+
             BigDecimal fixedUnitPrice = variety.getPricePerKg();
-            BigDecimal lineTotal = fixedUnitPrice != null ? fixedUnitPrice.multiply(itemReq.getQuantity()) : null;
+            BigDecimal lineTotal = fixedUnitPrice != null
+                    ? fixedUnitPrice.multiply(effectiveQtyKg).setScale(2, java.math.RoundingMode.HALF_UP)
+                    : null;
             if (lineTotal != null) {
                 hasSeededPrices = true;
                 estimatedTotal = estimatedTotal.add(lineTotal);
@@ -85,7 +95,7 @@ public class QuotationService {
             QuotationItem item = QuotationItem.builder()
                     .fruit(fruit)
                     .variety(variety)
-                    .quantity(itemReq.getQuantity())
+                    .quantity(effectiveQtyKg)
                     .unitPrice(fixedUnitPrice)
                     .lineTotal(lineTotal)
                     .build();

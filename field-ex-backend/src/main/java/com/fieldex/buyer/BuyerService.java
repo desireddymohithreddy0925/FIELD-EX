@@ -10,7 +10,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +20,13 @@ public class BuyerService {
 
     private final BuyerRepository buyerRepository;
     private final UserRepository userRepository;
+
+    @Transactional(readOnly = true)
+    public List<BuyerDto> getAllBuyers() {
+        return buyerRepository.findAll().stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
 
     @Transactional(readOnly = true)
     public BuyerDto getMyProfile() {

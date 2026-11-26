@@ -467,27 +467,44 @@ export default function AdminQuotationsPage() {
                       <div key={item.id} className="p-3.5 rounded-xl bg-muted/30 border border-border grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
                         <div className="sm:col-span-5">
                           <div className="font-semibold text-sm text-foreground">{item.fruitName}</div>
-                          <div className="text-xs text-muted-foreground">{item.varietyName} • {qty.toLocaleString()} kg</div>
+                          <div className="text-xs text-muted-foreground">
+                            {item.varietyName} • {qty.toLocaleString()} kg ({(qty / 1000).toFixed(2)} MT)
+                          </div>
                           {liveCatalog && (
                             <div className="text-[11px] text-primary font-mono mt-0.5">
-                              Catalog fixed: {liveCatalog.currency} ${liveCatalog.price.toFixed(2)}/kg
+                              Catalog: {liveCatalog.currency} ${liveCatalog.price.toFixed(2)}/kg (${(liveCatalog.price * 1000).toLocaleString()}/MT)
                             </div>
                           )}
                         </div>
 
-                        <div className="sm:col-span-4">
-                          <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                            Unit Price / kg ({currencyCode})
-                          </label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            required
-                            value={itemPrices[item.id] ?? 0}
-                            onChange={(e) => setItemPrices({ ...itemPrices, [item.id]: parseFloat(e.target.value) || 0 })}
-                            className="h-8 text-sm font-mono font-bold"
-                          />
+                        <div className="sm:col-span-4 space-y-1.5">
+                          <div>
+                            <label className="text-[11px] font-semibold text-muted-foreground block mb-0.5">
+                              Price / kg ({currencyCode})
+                            </label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              required
+                              value={itemPrices[item.id] ?? 0}
+                              onChange={(e) => setItemPrices({ ...itemPrices, [item.id]: parseFloat(e.target.value) || 0 })}
+                              className="h-8 text-sm font-mono font-bold"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-semibold text-muted-foreground block mb-0.5">
+                              Or Price / Tonne (MT)
+                            </label>
+                            <Input
+                              type="number"
+                              step="1"
+                              min="0"
+                              value={Number(((itemPrices[item.id] ?? 0) * 1000).toFixed(2))}
+                              onChange={(e) => setItemPrices({ ...itemPrices, [item.id]: Number(((parseFloat(e.target.value) || 0) / 1000).toFixed(4)) })}
+                              className="h-7 text-xs font-mono"
+                            />
+                          </div>
                         </div>
 
                         <div className="sm:col-span-3 text-right">

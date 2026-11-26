@@ -22,9 +22,8 @@ export default function AdminUsersPage() {
   const { hasRole } = useAuth();
   const isManagerOnly = hasRole('MANAGER') && !hasRole('ADMIN');
 
-  const assignableRoles = isManagerOnly
-    ? AVAILABLE_ROLES.filter(r => ['BUYER', 'QC_INSPECTOR', 'LOGISTICS'].includes(r.value))
-    : AVAILABLE_ROLES;
+  // Admin is a single exclusive position: never assignable via dropdown or user creation
+  const assignableRoles = AVAILABLE_ROLES.filter(r => r.value !== 'ADMIN');
 
   const [users, setUsers] = useState<UserDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -177,14 +176,16 @@ export default function AdminUsersPage() {
             Refresh
           </Button>
 
-          <Button 
-            size="sm" 
-            onClick={() => setIsCreateModalOpen(true)}
-            className="gap-2 font-semibold shadow-sm"
-          >
-            <UserPlus className="w-4 h-4" />
-            Add User & Assign Role
-          </Button>
+          {!isManagerOnly && (
+            <Button 
+              size="sm" 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="gap-2 font-semibold shadow-sm"
+            >
+              <UserPlus className="w-4 h-4" />
+              Add User & Assign Role
+            </Button>
+          )}
         </div>
       </div>
 
@@ -345,12 +346,17 @@ export default function AdminUsersPage() {
                           </span>
                         </td>
 
-                        {/* Interactive Role Assignment Dropdown */}
+                        {/* Reassign Role Select (Sole Admin Exclusive) */}
                         <td className="py-4 px-6">
-                          {isManagerOnly && (user.role === 'ADMIN' || user.role === 'MANAGER') ? (
+                          {user.role === 'ADMIN' ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
+                              <ShieldCheck className="w-3 h-3" />
+                              Sole System Administrator (Locked)
+                            </span>
+                          ) : isManagerOnly ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-md border border-border">
                               <ShieldAlert className="w-3 h-3 text-amber-600" />
-                              Protected HQ Account
+                              Admin-Only Assignment
                             </span>
                           ) : (
                             <select
@@ -371,7 +377,7 @@ export default function AdminUsersPage() {
                         {/* Account Status Toggle */}
                         <td className="py-4 px-6">
                           <button
-                            disabled={isBusy || (isManagerOnly && (user.role === 'ADMIN' || user.role === 'MANAGER'))}
+                            disabled={isBusy || user.role === 'ADMIN' || isManagerOnly}
                             onClick={() => handleToggleStatus(user.id, user.active)}
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 ${
                               user.active 

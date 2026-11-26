@@ -43,7 +43,8 @@ public class AdminUserController {
     }
 
     @PutMapping("/{userId}/role")
-    @Operation(summary = "Assign role to user", description = "Strictly assigns or updates the role of a user (ADMIN only)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Assign role to user", description = "Strictly assigns or updates the role of a user (sole ADMIN only; MANAGER, QC_INSPECTOR, LOGISTICS, BUYER)")
     public ResponseEntity<UserDto> assignRole(
             @PathVariable UUID userId,
             @Valid @RequestBody RoleAssignRequest request,
@@ -53,7 +54,8 @@ public class AdminUserController {
     }
 
     @PostMapping
-    @Operation(summary = "Create user with assigned role", description = "Admin creates a user account and assigns their role directly")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create user with assigned role", description = "Sole Admin creates a user account and assigns their role directly")
     public ResponseEntity<UserDto> createUser(
             @Valid @RequestBody CreateUserRequest request,
             Principal principal) {
@@ -63,7 +65,8 @@ public class AdminUserController {
     }
 
     @PatchMapping("/{userId}/status")
-    @Operation(summary = "Toggle user active status", description = "Admin activates or deactivates a user account")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Toggle user active status", description = "Sole Admin activates or deactivates a non-admin user account")
     public ResponseEntity<UserDto> toggleUserStatus(
             @PathVariable UUID userId,
             @RequestParam boolean active,

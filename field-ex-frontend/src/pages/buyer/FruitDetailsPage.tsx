@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../..
 import { Badge } from '../../components/ui/badge';
 import { 
   Loader2, ArrowLeft, CheckCircle2, MapPin, Calendar, 
-  Thermometer, Clock, ShieldCheck, Send 
+  Thermometer, Clock, ShieldCheck, Send, Sprout 
 } from 'lucide-react';
 import { getFruitMedia } from '../../utils/fruitMedia';
 
@@ -86,11 +86,17 @@ export default function FruitDetailsPage() {
         <div className="md:col-span-1 space-y-6">
           <Card className="overflow-hidden border-border bg-card">
             <div className="aspect-square relative overflow-hidden bg-muted border-b border-border">
-              <img
-                src={media.image}
-                alt={media.alt || fruit.name}
-                className="w-full h-full object-cover"
-              />
+              {media.image ? (
+                <img
+                  src={media.image}
+                  alt={media.alt || fruit.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-agro-sand/80 to-agro-linen/60">
+                  <Sprout className="w-16 h-16 text-primary/60" />
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
               <div className="absolute top-3 right-3">
                 <Badge variant="olive" className="text-[10px] font-semibold bg-black/60 text-white backdrop-blur-sm border-white/20">
@@ -201,6 +207,9 @@ export default function FruitDetailsPage() {
                         </span>
                         <span className="font-mono font-bold text-base text-primary">
                           {v.currency || 'USD'} ${Number(v.pricePerKg ?? 0).toFixed(2)} <span className="text-xs font-normal text-muted-foreground">/ kg</span>
+                        </span>
+                        <span className="block font-mono text-[11px] text-muted-foreground">
+                          {v.currency || 'USD'} ${(Number(v.pricePerKg ?? 0) * 1000).toLocaleString()} / MT
                         </span>
                       </div>
                       <div>

@@ -1,8 +1,12 @@
+import { useState } from "react"
 import { Outlet, NavLink, Link, useLocation } from "react-router-dom"
 import type { LucideIcon } from "lucide-react"
-import { LogOut, Sprout, Shield, ArrowUpRight, ChevronRight, Home } from "lucide-react"
+import { LogOut, Sprout, Shield, ArrowUpRight, ChevronRight, Home, KeyRound, X, CheckCircle2, AlertCircle } from "lucide-react"
 import { useAuth } from "../../context/auth-context"
+import { authService } from "../../services/auth.service"
 import { Badge } from "../ui/badge"
+import { Button } from "../ui/button"
+import { Input } from "../ui/input"
 
 export interface NavItem {
   name: string
@@ -27,9 +31,47 @@ function formatSegment(segment: string): string {
 }
 
 export function AppLayout({ navItems, title }: AppLayoutProps) {
-  const { logout, roles } = useAuth()
+  const { logout, roles, email } = useAuth()
   const { pathname } = useLocation()
   const primaryRole = roles[0] || title.toUpperCase()
+
+  const [pwdModalOpen, setPwdModalOpen] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [pwdSubmitting, setPwdSubmitting] = useState(false)
+  const [pwdError, setPwdError] = useState<string | null>(null)
+  const [pwdSuccess, setPwdSuccess] = useState<string | null>(null)
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPwdError(null)
+    setPwdSuccess(null)
+    if (newPassword.length < 6) {
+      setPwdError("New password must be at least 6 characters.")
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPwdError("New password and confirmation do not match.")
+      return
+    }
+    try {
+      setPwdSubmitting(true)
+      await authService.changePassword({ currentPassword, newPassword })
+      setPwdSuccess("Password updated successfully.")
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+      setTimeout(() => {
+        setPwdModalOpen(false)
+        setPwdSuccess(null)
+      }, 1200)
+    } catch (err: any) {
+      setPwdError(err.response?.data?.message || err.response?.data?.error || "Failed to update password.")
+    } finally {
+      setPwdSubmitting(false)
+    }
+  }
 
   const segments = pathname.split("/").filter(Boolean)
   const portalBasePath = segments.length > 0 ? `/${segments[0]}` : "/"
@@ -130,12 +172,21 @@ export function AppLayout({ navItems, title }: AppLayoutProps) {
               {primaryRole.slice(0, 2)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-foreground truncate">Operator Account</p>
+              <p className="text-xs font-semibold text-foreground truncate" title={email || "Operator Account"}>
+                {email || "Operator Account"}
+              </p>
               <div className="flex items-center gap-1.5">
                 <Shield className="w-3 h-3 text-tertiary" />
                 <span className="text-[11px] font-medium text-muted-foreground truncate">{primaryRole}</span>
               </div>
             </div>
+            <button
+              onClick={() => { setPwdError(null); setPwdSuccess(null); setPwdModalOpen(true); }}
+              title="Change Password"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              <KeyRound className="w-4 h-4" />
+            </button>
             <button 
               onClick={logout}
               title="Sign Out"
@@ -213,6 +264,88 @@ export function AppLayout({ navItems, title }: AppLayoutProps) {
           <Outlet />
         </div>
       </main>
+
+      {pwdModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card w-full max-w-md rounded-2xl border border-border shadow-xl p-6">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-heading font-bold text-foreground">Change Account Password</h3>
+              </div>
+              <button onClick={() => setPwdModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4 mt-4">
+              {pwdError && (
+                <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{pwdError}</span>
+                </div>
+              )}
+              {pwdSuccess && (
+                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{pwdSuccess}</span>
+                </div>
+              )}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
+                  Account
+                </label>
+                <Input value={email || ''} disabled className="bg-muted/40 text-xs font-mono" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
+                  Current Password
+                </label>
+                <Input
+                  type="password"
+                  required
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
+                  New Password (min 6 characters)
+                </label>
+                <Input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
+                  Confirm New Password
+                </label>
+                <Input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                />
+              </div>
+              <div className="pt-2 flex justify-end gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setPwdModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" disabled={pwdSubmitting}>
+                  {pwdSubmitting ? "Updating..." : "Update Password"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

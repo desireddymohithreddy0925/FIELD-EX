@@ -17,7 +17,7 @@ export default function RequestQuotationPage() {
   const [loading, setLoading] = useState(false);
   const [fruits, setFruits] = useState<any[]>([]);
   const [items, setItems] = useState([
-    { fruitId: initialFruitId, varietyId: initialVarietyId, quantity: 1000 }
+    { fruitId: initialFruitId, varietyId: initialVarietyId, quantity: 1000, unit: 'KG' }
   ]);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function RequestQuotationPage() {
   }, []);
 
   const handleAddItem = () => {
-    setItems([...items, { fruitId: '', varietyId: '', quantity: 1000 }]);
+    setItems([...items, { fruitId: '', varietyId: '', quantity: 1000, unit: 'KG' }]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -71,11 +71,13 @@ export default function RequestQuotationPage() {
     }
   };
 
+  const toEffectiveKg = (qty: number, unit?: string) => (unit === 'MT' ? qty * 1000 : qty);
+
   const estimatedPresentTotal = items.reduce((sum, item) => {
     const fruit = fruits.find(f => f.id === item.fruitId);
     const variety = fruit?.varieties?.find((v: any) => v.id === item.varietyId);
     const unitPrice = variety?.pricePerKg != null ? Number(variety.pricePerKg) : 0;
-    return sum + unitPrice * (Number(item.quantity) || 0);
+    return sum + unitPrice * toEffectiveKg(Number(item.quantity) || 0, item.unit);
   }, 0);
 
   return (
@@ -102,7 +104,8 @@ export default function RequestQuotationPage() {
               const varieties = selectedFruit?.varieties || [];
               const selectedVariety = varieties.find((v: any) => v.id === item.varietyId);
               const unitPrice = selectedVariety?.pricePerKg != null ? Number(selectedVariety.pricePerKg) : null;
-              const lineAmount = unitPrice != null ? unitPrice * (Number(item.quantity) || 0) : null;
+              const effectiveKg = toEffectiveKg(Number(item.quantity) || 0, item.unit);
+              const lineAmount = unitPrice != null ? unitPrice * effectiveKg : null;
 
               return (
                 <div key={index} className="p-4 border rounded-lg bg-muted/20 space-y-3">
@@ -130,21 +133,35 @@ export default function RequestQuotationPage() {
                         <SelectContent>
                           {varieties.map((v: any) => (
                             <SelectItem key={v.id} value={v.id}>
-                              {v.name}{v.pricePerKg != null ? ` (${v.currency || 'USD'} $${Number(v.pricePerKg).toFixed(2)}/kg)` : ''}
+                              {v.name}{v.pricePerKg != null ? ` (${v.currency || 'USD'} $${Number(v.pricePerKg).toFixed(2)}/kg • $${(Number(v.pricePerKg) * 1000).toLocaleString()}/MT)` : ''}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
 
-                    <div className="w-full md:w-36 space-y-2">
-                      <Label>Quantity (kg)</Label>
+                    <div className="w-full md:w-32 space-y-2">
+                      <Label>Quantity</Label>
                       <Input 
                         type="number" 
-                        min="1" 
+                        min="0.1"
+                        step="any"
                         value={item.quantity} 
-                        onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)} 
+                        onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)} 
                       />
+                    </div>
+
+                    <div className="w-full md:w-32 space-y-2">
+                      <Label>Unit</Label>
+                      <Select value={item.unit || 'KG'} onValueChange={(val) => handleItemChange(index, 'unit', val)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="KG">KG</SelectItem>
+                          <SelectItem value="MT">Tonnes (MT)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     {items.length > 1 && (
@@ -158,7 +175,10 @@ export default function RequestQuotationPage() {
                     <div className="pt-2.5 border-t border-border/60 flex flex-wrap items-center justify-between gap-2 text-xs">
                       <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
                         <span>
-                          Fixed Rate: <strong className="font-mono text-foreground">{unitPrice != null ? `${selectedVariety.currency || 'USD'} $${unitPrice.toFixed(2)}/kg` : 'Pending Admin Rate'}</strong>
+                          Fixed Rate: <strong className="font-mono text-foreground">{unitPrice != null ? `${selectedVariety.currency || 'USD'} $${unitPrice.toFixed(2)}/kg ($${(unitPrice * 1000).toLocaleString()}/MT)` : 'Pending Admin Rate'}</strong>
+                        </span>
+                        <span>
+                          Effective Mass: <strong className="font-mono text-foreground">{effectiveKg.toLocaleString()} KG ({(effectiveKg / 1000).toFixed(2)} MT)</strong>
                         </span>
                         <span>
                           Available: <strong className="text-foreground">{Number(selectedVariety.availableQuantity ?? 0).toLocaleString()} {selectedVariety.unit || 'KG'}</strong>

@@ -1,6 +1,5 @@
 package com.fieldex.buyer.catalog;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,9 +14,11 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class PricingUpdateRequest {
 
-    @NotNull(message = "Price is required")
-    @PositiveOrZero(message = "Price cannot be negative")
+    @PositiveOrZero(message = "Price per kg cannot be negative")
     private BigDecimal pricePerKg;
+
+    @PositiveOrZero(message = "Price per tonne cannot be negative")
+    private BigDecimal pricePerTonne;
 
     private String currency;
 

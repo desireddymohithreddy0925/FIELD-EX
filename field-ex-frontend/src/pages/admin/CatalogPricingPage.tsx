@@ -44,6 +44,7 @@ export default function CatalogPricingPage() {
 
   // Price Modal State
   const [priceModalVariety, setPriceModalVariety] = useState<{ fruit: Fruit; variety: FruitVariety } | null>(null);
+  const [priceEntryBasis, setPriceEntryBasis] = useState<'KG' | 'MT'>('KG');
   const [pricingForm, setPricingForm] = useState<PricingUpdatePayload>({
     pricePerKg: 0,
     currency: 'USD',
@@ -412,7 +413,10 @@ export default function CatalogPricingPage() {
                               </span>
                             </td>
                             <td className="py-3.5 px-6 font-mono font-bold text-foreground text-sm">
-                              {variety.currency || 'USD'} ${unitPrice.toFixed(2)} / kg
+                              <div>{variety.currency || 'USD'} ${unitPrice.toFixed(2)} / kg</div>
+                              <div className="text-[11px] font-medium text-muted-foreground">
+                                {variety.currency || 'USD'} ${(unitPrice * 1000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / MT
+                              </div>
                             </td>
                             <td className="py-3.5 px-6 font-medium text-foreground">
                               {availQty.toLocaleString()} {variety.unit || 'KG'}
@@ -476,20 +480,54 @@ export default function CatalogPricingPage() {
             </div>
 
             <form onSubmit={handleSavePricing} className="p-6 space-y-4">
+              {/* Per KG vs Per Tonne pricing mode toggle */}
+              <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-muted/40 border border-border">
+                <span className="text-xs font-semibold text-foreground pl-1">Enter Fixed Rate By:</span>
+                <div className="inline-flex rounded-lg bg-background border border-border p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setPriceEntryBasis('KG')}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${priceEntryBasis === 'KG' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Per KG ($/kg)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPriceEntryBasis('MT')}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${priceEntryBasis === 'MT' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Per Tonne ($/MT)
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Fixed Price / kg</label>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1">
+                    {priceEntryBasis === 'MT' ? 'Fixed Price / Metric Tonne (1,000 kg)' : 'Fixed Price / kg'}
+                  </label>
                   <div className="relative">
                     <DollarSign className="w-4 h-4 absolute left-2.5 top-2.5 text-muted-foreground" />
                     <Input 
                       type="number"
-                      step="0.01"
+                      step={priceEntryBasis === 'MT' ? '1' : '0.01'}
                       required
-                      value={pricingForm.pricePerKg}
-                      onChange={(e) => setPricingForm({ ...pricingForm, pricePerKg: parseFloat(e.target.value) || 0 })}
+                      value={priceEntryBasis === 'MT' ? Number(((pricingForm.pricePerKg ?? 0) * 1000).toFixed(2)) : (pricingForm.pricePerKg ?? 0)}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        setPricingForm({
+                          ...pricingForm,
+                          pricePerKg: priceEntryBasis === 'MT' ? Number((val / 1000).toFixed(4)) : val,
+                        });
+                      }}
                       className="pl-8 text-sm font-semibold"
                     />
                   </div>
+                  <p className="text-[11px] font-mono text-primary mt-1">
+                    {priceEntryBasis === 'MT'
+                      ? `= ${pricingForm.currency} $${(pricingForm.pricePerKg ?? 0).toFixed(4)} / kg`
+                      : `= ${pricingForm.currency} $${((pricingForm.pricePerKg ?? 0) * 1000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / MT`}
+                  </p>
                 </div>
 
                 <div>
@@ -552,7 +590,7 @@ export default function CatalogPricingPage() {
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-primary">Present Amount Calculator</span>
                   <span className="font-mono font-bold text-foreground">
-                    Total Lot Value: {pricingForm.currency} ${(pricingForm.pricePerKg * pricingForm.availableQuantity * toKgMultiplier(pricingForm.unit)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    Total Lot Value: {pricingForm.currency} ${((pricingForm.pricePerKg ?? 0) * pricingForm.availableQuantity * toKgMultiplier(pricingForm.unit)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-primary/15">
@@ -570,7 +608,7 @@ export default function CatalogPricingPage() {
                   <div className="text-right">
                     <span className="text-muted-foreground mr-1">Present Amount:</span>
                     <span className="font-mono font-bold text-sm text-primary">
-                      {pricingForm.currency} ${(pricingForm.pricePerKg * previewSampleQtyKg).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {pricingForm.currency} ${((pricingForm.pricePerKg ?? 0) * previewSampleQtyKg).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>

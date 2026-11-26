@@ -4,7 +4,7 @@ import { buyerApi } from '../../services/buyerApi';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import { Loader2, Package, Filter } from 'lucide-react';
+import { Loader2, Package, Filter, CheckCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 export default function OrdersPage() {
@@ -12,6 +12,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async (silent = false) => {
     try {
@@ -123,6 +124,30 @@ export default function OrdersPage() {
                     <Badge variant="outline" className={getStatusColor(o.status)}>
                       {o.status === 'QUOTE_ACCEPTED' ? 'Awaiting Acceptance' : o.status?.replace('_', ' ')}
                     </Badge>
+                    {['DISPATCHED', 'IN_TRANSIT', 'CUSTOMS'].includes(o.status) && (
+                      <Button
+                        size="sm"
+                        disabled={confirmingId === o.id}
+                        className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const notes = window.prompt('Confirm delivery notes:', 'Consignment received cleanly');
+                          if (notes === null) return;
+                          try {
+                            setConfirmingId(o.id);
+                            await buyerApi.confirmOrderDelivered(o.id, notes);
+                            await fetchOrders(false);
+                          } catch (err: any) {
+                            alert(err.response?.data?.message || 'Unable to confirm delivery');
+                          } finally {
+                            setConfirmingId(null);
+                          }
+                        }}
+                      >
+                        <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                        {confirmingId === o.id ? 'Confirming...' : 'Confirm Delivered'}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

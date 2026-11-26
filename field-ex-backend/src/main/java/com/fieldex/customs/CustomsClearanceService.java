@@ -1,5 +1,6 @@
 package com.fieldex.customs;
 
+import com.fieldex.customs.dto.CustomsClearanceDto;
 import com.fieldex.customs.rules.ComplianceEngine;
 import com.fieldex.order.Order;
 import com.fieldex.order.OrderRepository;
@@ -10,8 +11,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,38 @@ public class CustomsClearanceService {
     private final CustomsStatusHistoryRepository historyRepository;
     private final OrderRepository orderRepository;
     private final ComplianceEngine complianceEngine;
+
+    @Transactional(readOnly = true)
+    public List<CustomsClearanceDto> getAllClearances() {
+        return clearanceRepository.findAll().stream()
+                .filter(CustomsClearance::isActive)
+                .sorted(Comparator.comparing(CustomsClearance::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    public CustomsClearanceDto mapToDto(CustomsClearance c) {
+        CustomsDeclaration dec = c.getDeclaration();
+        return CustomsClearanceDto.builder()
+                .id(c.getId())
+                .orderId(c.getOrder() != null ? c.getOrder().getId() : null)
+                .orderNumber(c.getOrder() != null ? c.getOrder().getOrderNumber() : null)
+                .buyerCompany(c.getOrder() != null && c.getOrder().getBuyer() != null ? c.getOrder().getBuyer().getCompanyName() : null)
+                .status(c.getStatus())
+                .inspectionStatus(c.getInspectionStatus())
+                .remarks(c.getRemarks())
+                .clearanceDate(c.getClearanceDate())
+                .declarationReference(dec != null ? dec.getReference() : null)
+                .exportCountry(dec != null ? dec.getExportCountry() : null)
+                .destinationCountry(dec != null ? dec.getDestinationCountry() : null)
+                .exportPort(dec != null ? dec.getExportPort() : null)
+                .destinationPort(dec != null ? dec.getDestinationPort() : null)
+                .customsBroker(dec != null ? dec.getCustomsBroker() : null)
+                .dutiesAndTaxes(dec != null ? dec.getDutiesAndTaxes() : null)
+                .declarationDate(dec != null ? dec.getDeclarationDate() : null)
+                .createdAt(c.getCreatedAt())
+                .build();
+    }
 
     @Transactional(readOnly = true)
     public java.util.Optional<CustomsClearance> getClearanceByOrderId(UUID orderId) {
@@ -48,6 +83,7 @@ public class CustomsClearanceService {
                 .order(order)
                 .status(CustomsStatus.NOT_STARTED)
                 .build();
+        clearance.setActive(true);
         
         clearance = clearanceRepository.save(clearance);
         recordHistory(clearance, CustomsStatus.NOT_STARTED, "Clearance initiated");
@@ -63,6 +99,7 @@ public class CustomsClearanceService {
             throw new IllegalStateException("Cannot submit declaration from current state: " + clearance.getStatus());
         }
 
+        declarationData.setActive(true);
         CustomsDeclaration declaration = declarationRepository.save(declarationData);
         clearance.setDeclaration(declaration);
         
@@ -92,6 +129,10 @@ public class CustomsClearanceService {
         
         clearance.setStatus(newStatus);
         clearance.setRemarks(remarks);
+        if (newStatus == CustomsStatus.CLEARED) {
+            clearance.setClearanceDate(java.time.OffsetDateTime.now());
+            clearance.setInspectionStatus("CLEARED");
+        }
         clearance = clearanceRepository.save(clearance);
         recordHistory(clearance, newStatus, remarks);
         

@@ -25,6 +25,14 @@ export const authService = {
     })
     return response.data
   },
-  
-  // Registration and other auth endpoints can be added here
+
+  register: async (data: { name: string; email: string; password: string }) => {
+    const response = await api.post<AuthResponse>("/v1/auth/register", data)
+    return response.data
+  },
+
+  changePassword: async (payload: { currentPassword: string; newPassword: string }) => {
+    const response = await api.post<{ message: string }>("/v1/auth/change-password", payload)
+    return response.data
+  },
 }

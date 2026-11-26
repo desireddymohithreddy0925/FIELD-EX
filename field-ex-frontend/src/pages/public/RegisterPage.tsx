@@ -14,12 +14,12 @@ import {
   FormMessage,
 } from "../../components/ui/form"
 import { Input } from "../../components/ui/input"
-import api from "../../services/api"
+import { authService } from "../../services/auth.service"
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  name: z.string().min(2, "Full name or company name is required"),
+  email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.string().min(1, "Role is required"),
 })
 
 type RegisterRequest = z.infer<typeof registerSchema>
@@ -32,9 +32,9 @@ export function RegisterPage() {
   const form = useForm<RegisterRequest>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
+      name: "",
+      email: "",
       password: "",
-      role: "BUYER",
     },
   })
 
@@ -42,10 +42,19 @@ export function RegisterPage() {
     setIsLoading(true)
     setError(null)
     try {
-      await api.post("/v1/auth/register", data)
+      await authService.register({
+        name: data.name.trim(),
+        email: data.email.trim().toLowerCase(),
+        password: data.password,
+      })
       navigate("/login", { replace: true })
     } catch (err: any) {
-      setError(err.response?.data?.message || "Registration failed. Please check your details.")
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.email ||
+        "Registration failed. Please check your details."
+      )
     } finally {
       setIsLoading(false)
     }
@@ -89,14 +98,35 @@ export function RegisterPage() {
               
               <FormField
                 control={form.control}
-                name="username"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Business Email / Username
+                      Full Name / Organization
                     </FormLabel>
                     <FormControl>
                       <Input 
+                        placeholder="e.g. Global Fresh Imports" 
+                        {...field} 
+                        className="bg-background/60 border-border focus-visible:ring-tertiary"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Email Address
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email"
                         placeholder="buyer@importcompany.com" 
                         {...field} 
                         className="bg-background/60 border-border focus-visible:ring-tertiary"
@@ -106,6 +136,10 @@ export function RegisterPage() {
                   </FormItem>
                 )}
               />
+
+              <p className="text-[11px] text-muted-foreground bg-muted/40 border border-border rounded-lg p-2.5">
+                All self-registered accounts start with <strong>Buyer</strong> access. Operational staff roles (Manager, QC Inspector, Logistics) are assigned afterwards by the System Administrator.
+              </p>
 
               <FormField
                 control={form.control}

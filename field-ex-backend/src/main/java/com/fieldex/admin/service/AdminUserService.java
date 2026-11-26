@@ -38,22 +38,23 @@ public class AdminUserService {
                 .collect(Collectors.toList());
     }
 
+    private static final String SOLE_ADMIN_EMAIL = "desireddymohithreddy@gmail.com";
+
     @Transactional
     public UserDto assignRole(UUID userId, Role newRole, String operatorUsername) {
         User operator = userRepository.findByEmail(operatorUsername).orElse(null);
-        if (operator != null && operator.getRole() == Role.MANAGER) {
-            if (newRole == Role.ADMIN || newRole == Role.MANAGER) {
-                throw new org.springframework.security.access.AccessDeniedException("Managers can only assign BUYER, QC_INSPECTOR, or LOGISTICS roles");
-            }
+        if (operator != null && operator.getRole() != Role.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the Administrator can assign user roles");
+        }
+        if (newRole == Role.ADMIN) {
+            throw new IllegalArgumentException("Administrator is a single reserved position. Additional ADMIN accounts cannot be assigned.");
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
 
-        if (operator != null && operator.getRole() == Role.MANAGER) {
-            if (user.getRole() == Role.ADMIN || user.getRole() == Role.MANAGER) {
-                throw new org.springframework.security.access.AccessDeniedException("Managers cannot modify Administrator or Manager accounts");
-            }
+        if (user.getRole() == Role.ADMIN || SOLE_ADMIN_EMAIL.equalsIgnoreCase(user.getEmail())) {
+            throw new IllegalArgumentException("Cannot modify or reassign the sole Administrator account");
         }
 
         Role oldRole = user.getRole();
@@ -87,19 +88,21 @@ public class AdminUserService {
     @Transactional
     public UserDto createUser(CreateUserRequest request, String operatorUsername) {
         User operator = userRepository.findByEmail(operatorUsername).orElse(null);
-        if (operator != null && operator.getRole() == Role.MANAGER) {
-            if (request.getRole() == Role.ADMIN || request.getRole() == Role.MANAGER) {
-                throw new org.springframework.security.access.AccessDeniedException("Managers can only create users with BUYER, QC_INSPECTOR, or LOGISTICS roles");
-            }
+        if (operator != null && operator.getRole() != Role.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the Administrator can create staff accounts");
+        }
+        if (request.getRole() == Role.ADMIN) {
+            throw new IllegalArgumentException("Administrator is a single reserved position. Additional ADMIN accounts cannot be created.");
         }
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("User with email '" + request.getEmail() + "' already exists");
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+        if (userRepository.findByEmail(normalizedEmail).isPresent()) {
+            throw new IllegalArgumentException("User with email '" + normalizedEmail + "' already exists");
         }
 
         User user = User.builder()
                 .name(request.getName())
-                .email(request.getEmail())
+                .email(normalizedEmail)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
                 .build();
@@ -132,13 +135,15 @@ public class AdminUserService {
     @Transactional
     public UserDto toggleUserStatus(UUID userId, boolean active, String operatorUsername) {
         User operator = userRepository.findByEmail(operatorUsername).orElse(null);
+        if (operator != null && operator.getRole() != Role.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the Administrator can change user account status");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
 
-        if (operator != null && operator.getRole() == Role.MANAGER) {
-            if (user.getRole() == Role.ADMIN || user.getRole() == Role.MANAGER) {
-                throw new org.springframework.security.access.AccessDeniedException("Managers cannot modify Administrator or Manager accounts");
-            }
+        if (user.getRole() == Role.ADMIN || SOLE_ADMIN_EMAIL.equalsIgnoreCase(user.getEmail())) {
+            throw new IllegalArgumentException("Cannot modify status of the sole Administrator account");
         }
 
         user.setActive(active);

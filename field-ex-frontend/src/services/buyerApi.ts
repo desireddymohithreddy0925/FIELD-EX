@@ -39,22 +39,24 @@ export const buyerApi = {
 
   // Orders
   getOrders: (page = 0, size = 10, status?: string) => 
-    api.get<any>('/orders/me', { params: { page, size, status } }).then(res => res.data),
-  getOrderDetails: (id: string) => api.get(`/orders/${id}`).then(res => res.data),
+    api.get<any>('/v1/orders/me', { params: { page, size, status } }).then(res => res.data),
+  getOrderDetails: (id: string) => api.get(`/v1/orders/${id}`).then(res => res.data),
   createOrderFromQuotation: (quotationId: string) => 
-    api.post(`/orders/from-quotation/${quotationId}`).then(res => res.data),
+    api.post(`/v1/orders/from-quotation/${quotationId}`).then(res => res.data),
+  confirmOrderDelivered: (id: string, notes?: string) =>
+    api.post(`/v1/orders/${id}/confirm-delivery`, null, { params: { notes } }).then(res => res.data),
   
   // Shipments
-  getMyShipments: () => api.get('/shipments/me').then(res => res.data),
-  getOrderShipments: (orderId: string) => api.get(`/shipments/order/${orderId}`).then(res => res.data),
+  getMyShipments: () => api.get('/v1/shipments/me').then(res => res.data),
+  getOrderShipments: (orderId: string) => api.get(`/v1/shipments/order/${orderId}`).then(res => res.data),
 
   // Documents
-  getMyDocuments: () => api.get('/documents/me').then(res => res.data),
-  getOrderDocuments: (orderId: string) => api.get(`/documents/order/${orderId}`).then(res => res.data),
+  getMyDocuments: () => api.get('/v1/documents/me').then(res => res.data),
+  getOrderDocuments: (orderId: string) => api.get(`/v1/documents/order/${orderId}`).then(res => res.data),
 
   // Customs
-  getOrderCustoms: (orderId: string) => api.get(`/customs/orders/${orderId}`).then(res => res.data),
+  getOrderCustoms: (orderId: string) => api.get(`/v1/customs/orders/${orderId}`).then(res => res.data),
 
   // Notifications
-  getMyNotifications: () => api.get('/notifications/me').then(res => res.data),
+  getMyNotifications: () => api.get('/v1/notifications/me').then(res => res.data),
 };

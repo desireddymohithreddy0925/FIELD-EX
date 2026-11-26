@@ -18,4 +18,6 @@ public class QuotationItemRequest {
     @NotNull
     @Positive
     private BigDecimal quantity;
+
+    private String unit;
 }

@@ -5,6 +5,10 @@ import com.fieldex.fruit.Fruit;
 import com.fieldex.fruit.FruitRepository;
 import com.fieldex.fruit.FruitVariety;
 import com.fieldex.fruit.FruitVarietyRepository;
+import com.fieldex.quotation.Quotation;
+import com.fieldex.quotation.QuotationItem;
+import com.fieldex.quotation.QuotationRepository;
+import com.fieldex.quotation.QuotationStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -13,6 +17,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,6 +33,9 @@ public class CatalogService {
 
     @Autowired(required = false)
     private AuditLogService auditLogService;
+
+    @Autowired(required = false)
+    private QuotationRepository quotationRepository;
 
     @Transactional(readOnly = true)
     public Page<CatalogFruitDto> getAvailableFruits(com.fieldex.fruit.dto.FruitFilter filter, Pageable pageable) {
@@ -145,15 +154,66 @@ public class CatalogService {
     public CatalogVarietyDto updateVarietyPricing(UUID varietyId, PricingUpdateRequest request) {
         FruitVariety variety = varietyRepository.findById(varietyId)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Variety not found with id: " + varietyId));
-        variety.setPricePerKg(request.getPricePerKg());
+
+        BigDecimal resolvedPricePerKg = request.getPricePerTonne() != null
+                ? request.getPricePerTonne().divide(BigDecimal.valueOf(1000), 4, RoundingMode.HALF_UP)
+                : request.getPricePerKg();
+        if (resolvedPricePerKg == null) {
+            throw new IllegalArgumentException("Either pricePerKg or pricePerTonne must be provided");
+        }
+
+        variety.setPricePerKg(resolvedPricePerKg);
         if (request.getCurrency() != null) variety.setCurrency(request.getCurrency());
         if (request.getAvailableQuantity() != null) variety.setAvailableQuantity(request.getAvailableQuantity());
         if (request.getMinOrderQuantity() != null) variety.setMinOrderQuantity(request.getMinOrderQuantity());
         if (request.getUnit() != null) variety.setUnit(request.getUnit());
         FruitVariety updated = varietyRepository.save(variety);
-        logAudit("PRICE_UPDATE", updated.getName(), String.format("Fixed price %s %s/kg | Available Stock: %s %s | MOQ: %s",
-                updated.getCurrency(), updated.getPricePerKg(), updated.getAvailableQuantity(), updated.getUnit(), updated.getMinOrderQuantity()));
+
+        recalculateOpenQuotationsForVariety(updated);
+
+        BigDecimal perTonne = resolvedPricePerKg.multiply(BigDecimal.valueOf(1000)).setScale(2, RoundingMode.HALF_UP);
+        logAudit("PRICE_UPDATE", updated.getName(), String.format("Fixed price %s %s/kg (%s/MT) | Available Stock: %s %s | MOQ: %s",
+                updated.getCurrency(), updated.getPricePerKg(), perTonne, updated.getAvailableQuantity(), updated.getUnit(), updated.getMinOrderQuantity()));
         return mapVarietyToDto(updated);
+    }
+
+    private void recalculateOpenQuotationsForVariety(FruitVariety variety) {
+        if (quotationRepository == null || variety.getPricePerKg() == null) return;
+        List<Quotation> openQuotes = quotationRepository.findAll().stream()
+                .filter(q -> q.isActive() && q.getStatus() == QuotationStatus.REQUESTED)
+                .toList();
+        for (Quotation quote : openQuotes) {
+            boolean touched = false;
+            BigDecimal itemsTotal = BigDecimal.ZERO;
+            for (QuotationItem item : quote.getItems()) {
+                if (item.getVariety() != null && variety.getId().equals(item.getVariety().getId())) {
+                    item.setUnitPrice(variety.getPricePerKg());
+                    BigDecimal lineTotal = variety.getPricePerKg().multiply(item.getQuantity()).setScale(2, RoundingMode.HALF_UP);
+                    item.setLineTotal(lineTotal);
+                    touched = true;
+                }
+                if (item.getLineTotal() != null) {
+                    itemsTotal = itemsTotal.add(item.getLineTotal());
+                } else if (item.getUnitPrice() != null && item.getQuantity() != null) {
+                    itemsTotal = itemsTotal.add(item.getUnitPrice().multiply(item.getQuantity()));
+                }
+            }
+            if (touched) {
+                BigDecimal extra = BigDecimal.ZERO
+                        .add(quote.getPackagingCost() != null ? quote.getPackagingCost() : BigDecimal.ZERO)
+                        .add(quote.getTransportationCost() != null ? quote.getTransportationCost() : BigDecimal.ZERO)
+                        .add(quote.getExportHandlingCost() != null ? quote.getExportHandlingCost() : BigDecimal.ZERO)
+                        .add(quote.getShippingCost() != null ? quote.getShippingCost() : BigDecimal.ZERO)
+                        .add(quote.getInsuranceCost() != null ? quote.getInsuranceCost() : BigDecimal.ZERO)
+                        .add(quote.getTaxAmount() != null ? quote.getTaxAmount() : BigDecimal.ZERO)
+                        .subtract(quote.getDiscount() != null ? quote.getDiscount() : BigDecimal.ZERO);
+                quote.setTotalAmount(itemsTotal.add(extra).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP));
+                if (variety.getCurrency() != null) {
+                    quote.setCurrencyCode(variety.getCurrency());
+                }
+                quotationRepository.save(quote);
+            }
+        }
     }
 
     private void logAudit(String action, String resourceId, String metadata) {

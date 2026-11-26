@@ -2,6 +2,7 @@ import { createContext, useContext } from "react"
 
 export interface AuthContextType {
   token: string | null
+  email: string | null
   roles: string[]
   isAuthenticated: boolean
   isLoading: boolean

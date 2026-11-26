@@ -86,6 +86,24 @@ export default function OrderDetailsPage() {
     }
   };
 
+  const handleConfirmDelivery = async () => {
+    if (!order) return;
+    const notes = window.prompt(
+      'Confirm receipt of shipment and enter delivery inspection remarks:',
+      'Consignment received cleanly in cold chain condition'
+    );
+    if (notes === null) return;
+    try {
+      setActionLoading(true);
+      await buyerApi.confirmOrderDelivered(order.id, notes);
+      await fetchOrderDetails();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Unable to confirm delivery right now.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const fetchHistory = async () => {
     if (!order) return;
     setLoadingHistory(true);
@@ -250,6 +268,35 @@ export default function OrderDetailsPage() {
               Accept Order
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Buyer Delivery Confirmation Banner */}
+      {!isAdminOrManager && ['DISPATCHED', 'IN_TRANSIT', 'CUSTOMS'].includes(order.status) && (
+        <div className="p-5 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/30 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-600/15 text-emerald-700">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-600/15 text-emerald-800 text-[10px] font-bold uppercase tracking-wider mb-1">
+                Buyer Sign-Off Required
+              </div>
+              <h4 className="font-heading font-bold text-base text-foreground">Has This Order Arrived at Your Destination?</h4>
+              <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
+                Confirm physical delivery once you receive the consignment. Admin and Operations Manager only see this order as DELIVERED after your confirmation.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleConfirmDelivery}
+            disabled={actionLoading}
+            className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+          >
+            <CheckCircle className="w-4 h-4 mr-1.5" />
+            {actionLoading ? 'Confirming...' : 'Confirm Order Delivered'}
+          </Button>
         </div>
       )}
 

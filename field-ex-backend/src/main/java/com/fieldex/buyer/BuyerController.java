@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/buyers")
@@ -18,6 +19,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class BuyerController {
 
     private final BuyerService buyerService;
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'LOGISTICS')")
+    @Operation(summary = "List all registered buyer companies")
+    public ResponseEntity<List<BuyerDto>> getAllBuyers() {
+        return ResponseEntity.ok(buyerService.getAllBuyers());
+    }
 
     @GetMapping("/me")
     @PreAuthorize("hasRole('BUYER')")

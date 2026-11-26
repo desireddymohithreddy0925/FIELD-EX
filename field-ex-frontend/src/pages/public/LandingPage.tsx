@@ -637,14 +637,20 @@ export function LandingPage() {
                       className="rounded-[16px] bg-[#FBF9F4] border border-[#C2C8BF] shadow-sm overflow-hidden flex flex-col justify-between transition-colors hover:border-[#072C15]/50"
                     >
                       <div className="flex flex-col">
-                        <img
-                          src={summary.media.image}
-                          alt={summary.media.alt}
-                          width={384}
-                          height={240}
-                          loading="lazy"
-                          className="block w-full aspect-[16/10] object-cover bg-[#F0EEE9]"
-                        />
+                        {summary.media.image ? (
+                          <img
+                            src={summary.media.image}
+                            alt={summary.media.alt}
+                            width={384}
+                            height={240}
+                            loading="lazy"
+                            className="block w-full aspect-[16/10] object-cover bg-[#F0EEE9]"
+                          />
+                        ) : (
+                          <div className="w-full aspect-[16/10] bg-[#F0EEE9] flex items-center justify-center">
+                            <Sprout className="w-10 h-10 text-[#072C15]/40" aria-hidden="true" />
+                          </div>
+                        )}
                         <div className="p-5 flex flex-col gap-3">
                           <div className="flex items-center justify-between gap-2">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border border-[#C2C8BF] bg-[#D4EBAB] font-medium text-xs leading-4 tracking-[0.5px] text-[#253507]">

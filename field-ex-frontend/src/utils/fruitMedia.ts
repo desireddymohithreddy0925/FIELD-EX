@@ -2,6 +2,9 @@ import alphonsoMangoImg from "../assets/produce/alphonso-mango.jpg";
 import bhagwaPomegranateImg from "../assets/produce/bhagwa-pomegranate.jpg";
 import cavendishBananasImg from "../assets/produce/cavendish-bananas.jpg";
 import thompsonGrapesImg from "../assets/produce/thompson-grapes.jpg";
+import papayaImg from "../assets/produce/papaya.jpg";
+import guavaImg from "../assets/produce/guava.jpg";
+import nagpurMandarinImg from "../assets/produce/nagpur-mandarin.jpg";
 import appleImg from "../assets/produce/apple.jpg";
 
 export interface FruitMedia {
@@ -17,10 +20,10 @@ export interface FruitMedia {
 export function getFruitMedia(name: string = ""): FruitMedia {
   const lower = (name || "").toLowerCase();
 
-  if (lower.includes("mango")) {
+  if (lower.includes("mango") || lower.includes("alphonso") || lower.includes("kesar") || lower.includes("banganapalli")) {
     return {
       image: alphonsoMangoImg,
-      alt: "Ratnagiri Fresh Mango Export Harvest",
+      alt: "Ratnagiri Alphonso & Kesar Mango Export Packhouse Carton",
       origin: "Ratnagiri & Devgad, Maharashtra",
       grade: "Grade A Export",
       brix: "18-20° Brix",
@@ -29,10 +32,10 @@ export function getFruitMedia(name: string = ""): FruitMedia {
     };
   }
 
-  if (lower.includes("pomegranate") || lower.includes("anar") || lower.includes("bhagwa")) {
+  if (lower.includes("pomegranate") || lower.includes("anar") || lower.includes("bhagwa") || lower.includes("arakta")) {
     return {
       image: bhagwaPomegranateImg,
-      alt: "Solapur Bhagwa Ruby-Red Pomegranate Export Harvest",
+      alt: "Solapur Bhagwa Ruby-Red Pomegranate Export Carton",
       origin: "Solapur & Nashik, Maharashtra",
       grade: "Export Extra",
       brix: "15-17° Brix",
@@ -45,11 +48,12 @@ export function getFruitMedia(name: string = ""): FruitMedia {
     lower.includes("banana") ||
     lower.includes("cavendish") ||
     lower.includes("g9") ||
-    lower.includes("grand naine")
+    lower.includes("grand naine") ||
+    lower.includes("robusta")
   ) {
     return {
       image: cavendishBananasImg,
-      alt: "Jalgaon Cavendish Premium Green Bananas",
+      alt: "Jalgaon Cavendish Premium Green Bananas Export Crate",
       origin: "Jalgaon, Maharashtra & Theni",
       grade: "Premium Hand",
       brix: "High Caliber",
@@ -58,15 +62,58 @@ export function getFruitMedia(name: string = ""): FruitMedia {
     };
   }
 
-  if (lower.includes("grape") || lower.includes("thompson")) {
+  if (lower.includes("grape") || lower.includes("thompson") || lower.includes("sonaka") || lower.includes("sharad")) {
     return {
       image: thompsonGrapesImg,
-      alt: "Nashik Thompson Seedless Export Grapes",
+      alt: "Nashik Thompson Seedless Grapes Export Packhouse Punnets",
       origin: "Nashik & Sangli, Maharashtra",
       grade: "Super Extra",
       brix: "16-18° Brix",
       highlight: "GlobalGAP",
       icon: "🍇",
+    };
+  }
+
+  if (lower.includes("papaya") || lower.includes("red lady")) {
+    return {
+      image: papayaImg,
+      alt: "Anantapur & Gujarat Red Lady Papaya Export Carton",
+      origin: "Anantapur & Gujarat",
+      grade: "Grade A Export",
+      brix: "11-13° Brix",
+      highlight: "Fresh Harvest",
+      icon: "🍈",
+    };
+  }
+
+  if (lower.includes("guava") || lower.includes("safeda") || lower.includes("lalit")) {
+    return {
+      image: guavaImg,
+      alt: "Nashik Allahabad Safeda Guava Export Packhouse Carton",
+      origin: "Nashik, Maharashtra",
+      grade: "Grade A Export",
+      brix: "10-12° Brix",
+      highlight: "Export Spec",
+      icon: "🍐",
+    };
+  }
+
+  if (
+    lower.includes("mandarin") ||
+    lower.includes("orange") ||
+    lower.includes("citrus") ||
+    lower.includes("nagpur") ||
+    lower.includes("tangerine") ||
+    lower.includes("kinnow")
+  ) {
+    return {
+      image: nagpurMandarinImg,
+      alt: "Vidarbha Nagpur Mandarin Citrus Export Packhouse Carton",
+      origin: "Vidarbha, Maharashtra",
+      grade: "Grade A Citrus",
+      brix: "10-12° Brix",
+      highlight: "Peak Harvest",
+      icon: "🍊",
     };
   }
 
@@ -83,7 +130,7 @@ export function getFruitMedia(name: string = ""): FruitMedia {
   }
 
   return {
-    image: alphonsoMangoImg,
+    image: "",
     alt: `${name} Fresh Produce`,
     origin: "Verified APEDA Farm Clusters",
     grade: "Export Grade",

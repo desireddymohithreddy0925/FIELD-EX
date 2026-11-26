@@ -154,9 +154,22 @@ public class InventoryService {
         return mapToDto(inventory);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = IllegalStateException.class)
     public List<com.fieldex.inventory.dto.InventoryAllocationResult> allocateFIFO(UUID fruitId, UUID varietyId, BigDecimal requiredQuantity, String reason, String reference) {
         List<Inventory> availableInventories = inventoryRepository.findAvailableInventoryByFruitAndVariety(fruitId, varietyId);
+
+        BigDecimal precheckAvailable = availableInventories.stream()
+                .filter(inv -> inv.getBatch().getExpirationDate() == null
+                        || !java.time.Instant.now().isAfter(inv.getBatch().getExpirationDate()))
+                .map(Inventory::getAvailableQuantity)
+                .filter(q -> q != null && q.compareTo(BigDecimal.ZERO) > 0)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (precheckAvailable.compareTo(requiredQuantity) < 0) {
+            throw new IllegalStateException("Insufficient inventory available. Required: " + requiredQuantity
+                    + ", Shortfall: " + requiredQuantity.subtract(precheckAvailable));
+        }
+
         List<com.fieldex.inventory.dto.InventoryAllocationResult> results = new java.util.ArrayList<>();
         
         BigDecimal remainingToAllocate = requiredQuantity;

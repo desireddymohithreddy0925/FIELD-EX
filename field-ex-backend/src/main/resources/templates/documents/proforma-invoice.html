@@ -32,9 +32,9 @@
         </td>
         <td width="50%">
             <strong>Buyer:</strong><br/>
-            <span th:text="${buyer.companyName}">Company</span><br/>
-            <span th:text="${buyer.address}">Address</span><br/>
-            <span th:text="${buyer.destinationCity} + ', ' + ${buyer.country}">City, Country</span>
+            <span th:text="${buyer != null ? buyer.companyName : 'Buyer'}">Company</span><br/>
+            <span th:text="${buyer != null ? buyer.address : ''}">Address</span><br/>
+            <span th:text="${buyer != null ? ((buyer.destinationCity != null ? buyer.destinationCity : '') + ', ' + (buyer.country != null ? buyer.country : '')) : ''}">City, Country</span>
         </td>
     </tr>
     <tr>
@@ -59,11 +59,11 @@
     </thead>
     <tbody>
     <tr th:each="item : ${order.items}">
-        <td th:text="${item.fruit}">Mango</td>
-        <td th:text="${item.variety}">Alphonso</td>
+        <td th:text="${item.fruit != null ? item.fruit.name : '-'}">Mango</td>
+        <td th:text="${item.variety != null ? item.variety.name : '-'}">Alphonso</td>
         <td th:text="${item.quantity}">1000</td>
-        <td th:text="${item.unitPrice}">2.50</td>
-        <td th:text="${item.quantity * item.unitPrice}">2500.00</td>
+        <td th:text="${item.unitPrice != null ? item.unitPrice : 0}">2.50</td>
+        <td th:text="${item.lineTotal != null ? item.lineTotal : (item.quantity != null and item.unitPrice != null ? item.quantity * item.unitPrice : 0)}">2500.00</td>
     </tr>
     </tbody>
 </table>

@@ -51,4 +51,13 @@ public class ShipmentController {
             @RequestParam(required = false) String remarks) {
         return ResponseEntity.ok(shipmentService.transitionState(shipmentId, status, remarks));
     }
+
+    @PutMapping("/{shipmentId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
+    @Operation(summary = "Update shipment carrier, container, tracking and port details")
+    public ResponseEntity<com.fieldex.buyer.dto.BuyerShipmentDto> updateShipmentDetails(
+            @PathVariable UUID shipmentId,
+            @RequestBody com.fieldex.shipment.dto.ShipmentUpdateRequest request) {
+        return ResponseEntity.ok(shipmentService.updateShipmentDetails(shipmentId, request));
+    }
 }

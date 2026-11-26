@@ -63,7 +63,11 @@ public class ShipmentStateMachineService {
 
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<com.fieldex.buyer.dto.BuyerShipmentDto> getAllShipmentDtos(com.fieldex.shipment.dto.ShipmentFilter filter, org.springframework.data.domain.Pageable pageable) {
-        return getAllShipments(filter, pageable).map(s -> com.fieldex.buyer.dto.BuyerShipmentDto.builder()
+        return getAllShipments(filter, pageable).map(this::mapToDto);
+    }
+
+    public com.fieldex.buyer.dto.BuyerShipmentDto mapToDto(Shipment s) {
+        return com.fieldex.buyer.dto.BuyerShipmentDto.builder()
                 .id(s.getId())
                 .orderId(s.getOrder() != null ? s.getOrder().getId() : null)
                 .orderNumber(s.getOrder() != null ? s.getOrder().getOrderNumber() : null)
@@ -78,7 +82,7 @@ public class ShipmentStateMachineService {
                 .expectedDelivery(s.getExpectedDelivery())
                 .actualDelivery(s.getActualDelivery())
                 .createdAt(s.getCreatedAt() != null ? s.getCreatedAt().atOffset(java.time.ZoneOffset.UTC) : null)
-                .build());
+                .build();
     }
 
     @Transactional(readOnly = true)
@@ -103,11 +107,49 @@ public class ShipmentStateMachineService {
         Shipment shipment = Shipment.builder()
                 .order(order)
                 .status(ShipmentStatus.PREPARING)
+                .originPort("JNPT Port, Mumbai")
+                .destinationPort(order.getBuyer() != null && order.getBuyer().getDestinationPort() != null && !order.getBuyer().getDestinationPort().isBlank()
+                        ? order.getBuyer().getDestinationPort() : "Port of Felixstowe")
+                .destinationCountry(toIsoCountryCode(order.getBuyer() != null ? order.getBuyer().getCountry() : null))
+                .expectedDelivery(OffsetDateTime.now().plusDays(10))
                 .build();
+        shipment.setActive(true);
         
         shipment = shipmentRepository.save(shipment);
         recordHistory(shipment, ShipmentStatus.PREPARING, "Shipment created");
         return shipment;
+    }
+
+    @Transactional
+    public com.fieldex.buyer.dto.BuyerShipmentDto updateShipmentDetails(UUID shipmentId, com.fieldex.shipment.dto.ShipmentUpdateRequest request) {
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() -> new EntityNotFoundException("Shipment not found: " + shipmentId));
+        if (request.getContainerNumber() != null) shipment.setContainerNumber(request.getContainerNumber().trim());
+        if (request.getShippingCompany() != null) shipment.setShippingCompany(request.getShippingCompany().trim());
+        if (request.getTrackingNumber() != null) shipment.setTrackingNumber(request.getTrackingNumber().trim());
+        if (request.getOriginPort() != null) shipment.setOriginPort(request.getOriginPort().trim());
+        if (request.getDestinationPort() != null) shipment.setDestinationPort(request.getDestinationPort().trim());
+        if (request.getDestinationCountry() != null && !request.getDestinationCountry().isBlank()) {
+            shipment.setDestinationCountry(toIsoCountryCode(request.getDestinationCountry()));
+        }
+        if (request.getExpectedDelivery() != null) shipment.setExpectedDelivery(request.getExpectedDelivery());
+        shipment = shipmentRepository.save(shipment);
+        return mapToDto(shipment);
+    }
+
+    private String toIsoCountryCode(String country) {
+        if (country == null || country.isBlank()) return "GB";
+        String trimmed = country.trim();
+        if (trimmed.length() == 2) return trimmed.toUpperCase();
+        String lower = trimmed.toLowerCase();
+        if (lower.contains("united kingdom") || lower.contains("uk") || lower.contains("britain")) return "GB";
+        if (lower.contains("netherlands") || lower.contains("holland")) return "NL";
+        if (lower.contains("united arab") || lower.contains("uae") || lower.contains("dubai")) return "AE";
+        if (lower.contains("united states") || lower.contains("usa")) return "US";
+        if (lower.contains("germany")) return "DE";
+        if (lower.contains("singapore")) return "SG";
+        if (lower.contains("india")) return "IN";
+        return trimmed.substring(0, 2).toUpperCase();
     }
 
     @Transactional
