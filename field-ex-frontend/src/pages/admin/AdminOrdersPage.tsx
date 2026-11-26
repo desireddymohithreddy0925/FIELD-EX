@@ -38,6 +38,13 @@ export default function AdminOrdersPage() {
   const [targetStatus, setTargetStatus] = useState<string>('PROCESSING');
   const [transitionNotes, setTransitionNotes] = useState<string>('');
   const [isSubmittingTransition, setIsSubmittingTransition] = useState(false);
+
+  // Accept / Reject Modal State (Admin & Manager Authority)
+  const [acceptanceModalOrder, setAcceptanceModalOrder] = useState<any | null>(null);
+  const [acceptanceAction, setAcceptanceAction] = useState<'ACCEPT' | 'REJECT'>('ACCEPT');
+  const [acceptanceNotes, setAcceptanceNotes] = useState<string>('');
+  const [isSubmittingAcceptance, setIsSubmittingAcceptance] = useState(false);
+
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -87,6 +94,30 @@ export default function AdminOrdersPage() {
       setErrorMessage(err.response?.data?.message || 'Failed to transition order status.');
     } finally {
       setIsSubmittingTransition(false);
+    }
+  };
+
+  const handleExecuteAcceptanceOrRejection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!acceptanceModalOrder) return;
+    setIsSubmittingAcceptance(true);
+    setErrorMessage(null);
+    try {
+      if (acceptanceAction === 'ACCEPT') {
+        await adminApi.acceptOrder(acceptanceModalOrder.id, acceptanceNotes);
+        setStatusMessage(`Order ${acceptanceModalOrder.orderNumber} successfully accepted and transitioned to PROCESSING!`);
+      } else {
+        await adminApi.rejectOrder(acceptanceModalOrder.id, acceptanceNotes);
+        setStatusMessage(`Order ${acceptanceModalOrder.orderNumber} successfully rejected and cancelled.`);
+      }
+      setAcceptanceModalOrder(null);
+      setAcceptanceNotes('');
+      await fetchOrders();
+      setTimeout(() => setStatusMessage(null), 4000);
+    } catch (err: any) {
+      setErrorMessage(err.response?.data?.message || `Failed to ${acceptanceAction.toLowerCase()} order.`);
+    } finally {
+      setIsSubmittingAcceptance(false);
     }
   };
 
@@ -233,7 +264,7 @@ export default function AdminOrdersPage() {
 
                       <td className="py-4 px-6">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(order.status)}`}>
-                          {order.status}
+                          {order.status === 'QUOTE_ACCEPTED' ? 'Awaiting Acceptance' : order.status}
                         </span>
                       </td>
 
@@ -261,16 +292,46 @@ export default function AdminOrdersPage() {
                             View History
                           </Button>
 
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setTransitionOrder(order);
-                              setTargetStatus('PROCESSING');
-                            }}
-                            className="h-8 text-xs px-2.5 gap-1 font-semibold"
-                          >
-                            Transition
-                          </Button>
+                          {order.status === 'QUOTE_ACCEPTED' ? (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  setAcceptanceModalOrder(order);
+                                  setAcceptanceAction('ACCEPT');
+                                  setAcceptanceNotes('Order accepted by operations management; reserving export inventory.');
+                                }}
+                                className="h-8 text-xs px-2.5 gap-1 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Accept Order
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setAcceptanceModalOrder(order);
+                                  setAcceptanceAction('REJECT');
+                                  setAcceptanceNotes('Order rejected by operations management.');
+                                }}
+                                className="h-8 text-xs px-2.5 gap-1 font-semibold text-rose-600 border-rose-300 hover:bg-rose-50"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                Reject
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setTransitionOrder(order);
+                                setTargetStatus('PROCESSING');
+                              }}
+                              className="h-8 text-xs px-2.5 gap-1 font-semibold"
+                            >
+                              Transition
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -405,6 +466,86 @@ export default function AdminOrdersPage() {
                 <Button type="submit" size="sm" disabled={isSubmittingTransition} className="gap-2 font-semibold">
                   {isSubmittingTransition && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                   Execute Transition
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Accept / Reject Buyer Order (Admin & Manager Authority) */}
+      {acceptanceModalOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className={`px-6 py-4 border-b border-border flex items-center justify-between ${
+              acceptanceAction === 'ACCEPT' ? 'bg-emerald-500/10' : 'bg-rose-500/10'
+            }`}>
+              <div className="flex items-center gap-2">
+                {acceptanceAction === 'ACCEPT' ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                ) : (
+                  <ShieldAlert className="w-5 h-5 text-rose-600" />
+                )}
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-foreground">
+                    {acceptanceAction === 'ACCEPT' ? 'Accept Buyer Order' : 'Reject Buyer Order'}
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">Admin & Manager Exclusive Privilege</p>
+                </div>
+              </div>
+              <button onClick={() => setAcceptanceModalOrder(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleExecuteAcceptanceOrRejection} className="p-6 space-y-4">
+              <div className="p-3 rounded-lg bg-muted/40 border border-border text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Order Number:</span>
+                  <span className="font-mono font-bold text-foreground">{acceptanceModalOrder.orderNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Invoice Value:</span>
+                  <span className="font-semibold text-foreground">{acceptanceModalOrder.currencyCode} ${Number(acceptanceModalOrder.totalAmount).toLocaleString()}</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {acceptanceAction === 'ACCEPT'
+                  ? 'Accepting this order officially authorizes fulfillment, transitions the status to PROCESSING, and commits inventory reservation via FIFO. Only Admins and Operations Managers hold this authority.'
+                  : 'Rejecting will cancel the buyer-placed order, releasing any holds. This action is irreversible.'}
+              </p>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">
+                  {acceptanceAction === 'ACCEPT' ? 'Operations Acceptance Notes' : 'Rejection Reason'}
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder={acceptanceAction === 'ACCEPT' ? 'e.g. Verified cold-storage availability, staging for packhouse sorting.' : 'Reason for order rejection...'}
+                  value={acceptanceNotes}
+                  onChange={(e) => setAcceptanceNotes(e.target.value)}
+                  className="w-full text-xs bg-background border border-border rounded-md p-2.5 text-foreground"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <Button type="button" variant="outline" size="sm" onClick={() => setAcceptanceModalOrder(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSubmittingAcceptance}
+                  className={`gap-2 font-semibold ${
+                    acceptanceAction === 'ACCEPT'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-rose-600 hover:bg-rose-700 text-white'
+                  }`}
+                >
+                  {isSubmittingAcceptance && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  {acceptanceAction === 'ACCEPT' ? 'Confirm & Accept Order' : 'Confirm & Reject Order'}
                 </Button>
               </div>
             </form>

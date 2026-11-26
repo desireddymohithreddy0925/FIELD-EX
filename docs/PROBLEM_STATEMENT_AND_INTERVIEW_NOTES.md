@@ -37,8 +37,10 @@ To architect a resilient, domain-driven platform, qualitative interviews were co
 - **Representative**: Rajesh Kulkarni, VP of Operations, FIELD-EX Hub, Maharashtra.
 - **Key Quotes & Feedback**:
   > *"My job is managing risk, margins, and operational velocity. I need direct visibility into daily warehouse throughput, unfulfilled buyer demand, supplier delivery bottlenecks, and packing queue delays."*
+  > *"Crucially, buyers must not be able to self-authorize export commitments. When a buyer places an order from an approved quotation, it must enter a pending acceptance queue. Only Admin and Operations Managers possess the authority to accept the order, verifying cold-room stock availability before inventory is locked via FIFO and scheduled for packaging."*
   > *"I also need authority to fix cultivar prices and stock availability on the fly, provision buyer and logistics accounts without waiting for IT, and review the immutable audit history of every order transition."*
 - **Derived System Requirements**:
+  - Exclusive Admin & Manager Order Acceptance Gate: Buyer-placed orders require explicit acceptance (`POST /api/v1/admin/orders/{id}/accept`) by Admin or Manager to initiate `PROCESSING` and FIFO stock reservation.
   - Executive Operations Command Center with operational KPIs (Export Volume, Order Fulfillment Rate, Active Lots).
   - Delegated role assignment authority to provision and assign `BUYER`, `QC_INSPECTOR`, and `LOGISTICS` roles.
   - Live Produce Catalog & Price Fixing console to adjust prices per kg/MT, currencies, available stock, and MOQ.

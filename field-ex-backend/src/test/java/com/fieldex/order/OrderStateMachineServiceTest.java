@@ -144,4 +144,42 @@ class OrderStateMachineServiceTest {
             stateMachineService.transitionState(order.getId(), OrderStatus.PAID, "Buyer cannot approve orders");
         });
     }
+
+    @Test
+    void testBuyerCannotAcceptOrderPlacedFromQuotation() {
+        User buyerUser = User.builder().email("buyer@test.com").role(Role.BUYER).build();
+        setupSecurityContext(buyerUser);
+        order.setStatus(OrderStatus.QUOTE_ACCEPTED);
+        when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
+
+        assertThrows(AccessDeniedException.class, () -> {
+            stateMachineService.transitionState(order.getId(), OrderStatus.PROCESSING, "Buyer trying to accept order");
+        });
+    }
+
+    @Test
+    void testManagerCanAcceptBuyerPlacedOrder() {
+        User managerUser = User.builder().email("manager@test.com").role(Role.MANAGER).build();
+        setupSecurityContext(managerUser);
+        order.setStatus(OrderStatus.QUOTE_ACCEPTED);
+        when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
+
+        Order result = stateMachineService.transitionState(order.getId(), OrderStatus.PROCESSING, "Order accepted by operations manager");
+        assertEquals(OrderStatus.PROCESSING, result.getStatus());
+        verify(orderRepository).save(order);
+        verify(historyRepository).save(any(OrderStatusHistory.class));
+    }
+
+    @Test
+    void testManagerCanRejectBuyerPlacedOrder() {
+        User managerUser = User.builder().email("manager@test.com").role(Role.MANAGER).build();
+        setupSecurityContext(managerUser);
+        order.setStatus(OrderStatus.QUOTE_ACCEPTED);
+        when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
+
+        Order result = stateMachineService.transitionState(order.getId(), OrderStatus.CANCELLED, "Order rejected by operations manager");
+        assertEquals(OrderStatus.CANCELLED, result.getStatus());
+        verify(orderRepository).save(order);
+        verify(historyRepository).save(any(OrderStatusHistory.class));
+    }
 }

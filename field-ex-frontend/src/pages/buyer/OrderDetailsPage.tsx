@@ -6,7 +6,10 @@ import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import { Loader2, ArrowLeft, Package, FileText, Anchor, Truck, CheckCircle, Download, History, X } from 'lucide-react';
+import { 
+  Loader2, ArrowLeft, Package, FileText, Anchor, 
+  Truck, CheckCircle, Download, History, X, Clock, Check, ShieldAlert 
+} from 'lucide-react';
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
@@ -23,6 +26,34 @@ export default function OrderDetailsPage() {
   const [historyList, setHistoryList] = useState<any[]>([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const handleAcceptOrReject = async (action: 'ACCEPT' | 'REJECT') => {
+    if (!order) return;
+    const defaultNotes = action === 'ACCEPT' 
+      ? 'Order accepted by operations management; produce inventory allocated.' 
+      : 'Order rejected by operations management.';
+    const promptMsg = action === 'ACCEPT' 
+      ? 'Enter acceptance notes / staging instructions:' 
+      : 'Enter reason for rejection:';
+    const notes = window.prompt(promptMsg, defaultNotes);
+    if (notes === null) return;
+
+    try {
+      setActionLoading(true);
+      if (action === 'ACCEPT') {
+        await adminApi.acceptOrder(order.id, notes);
+      } else {
+        await adminApi.rejectOrder(order.id, notes);
+      }
+      await fetchOrderDetails();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || `Failed to ${action.toLowerCase()} order.`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const fetchHistory = async () => {
     if (!order) return;
@@ -91,6 +122,7 @@ export default function OrderDetailsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'QUOTE_ACCEPTED': return 'bg-amber-100 text-amber-800 border-amber-300 font-bold';
       case 'PAYMENT_PENDING': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'PAID': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case 'PROCESSING': return 'bg-purple-100 text-purple-800 border-purple-200';
@@ -148,7 +180,7 @@ export default function OrderDetailsPage() {
               Placed on {new Date(order.createdAt).toLocaleDateString()}
             </p>
             <Badge variant="outline" className={getStatusColor(order.status)}>
-              {order.status.replace('_', ' ')}
+              {order.status === 'QUOTE_ACCEPTED' ? 'Awaiting Acceptance' : order.status.replace('_', ' ')}
             </Badge>
           </div>
         </div>
@@ -168,6 +200,61 @@ export default function OrderDetailsPage() {
           </div>
         )}
       </div>
+
+      {/* Operational Order Acceptance Banner for Admin / Manager */}
+      {order.status === 'QUOTE_ACCEPTED' && isAdminOrManager && (
+        <div className="p-5 rounded-2xl bg-card border-2 border-primary/30 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider mb-1">
+                Action Required: Admin / Manager Acceptance
+              </div>
+              <h4 className="font-heading font-bold text-base text-foreground">Review & Accept Buyer Order</h4>
+              <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
+                This commercial order was placed by the buyer. Accept this order to transition to PROCESSING and commit export inventory via FIFO allocation.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleAcceptOrReject('REJECT')}
+              disabled={actionLoading}
+              className="text-xs font-semibold text-rose-600 border-rose-300 hover:bg-rose-50"
+            >
+              <X className="w-3.5 h-3.5 mr-1" />
+              Reject Order
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleAcceptOrReject('ACCEPT')}
+              disabled={actionLoading}
+              className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <Check className="w-3.5 h-3.5 mr-1" />
+              Accept Order
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Buyer Informational Banner */}
+      {order.status === 'QUOTE_ACCEPTED' && !isAdminOrManager && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+          <Clock className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+          <div>
+            <h4 className="font-semibold text-sm text-foreground">Order Awaiting Exporter Acceptance</h4>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Your order has been placed with FIELD-EX and is awaiting official review and acceptance by our Operations Management team (Admin / Manager). Once accepted, warehouse inventory allocation and export packing will commence.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* History Modal for Admin & Manager */}
       {showHistoryModal && (

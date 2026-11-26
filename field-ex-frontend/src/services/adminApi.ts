@@ -115,7 +115,7 @@ export const adminApi = {
     return res.data;
   },
 
-  // Admin Orders Management
+  // Admin & Manager Orders Management
   getAllOrders: async (params?: any): Promise<any> => {
     const res = await api.get('/v1/admin/orders', { params });
     return res.data;
@@ -125,5 +125,19 @@ export const adminApi = {
     await api.post(`/v1/admin/orders/${orderId}/transition`, null, {
       params: { targetStatus, notes },
     });
+  },
+
+  acceptOrder: async (orderId: string, notes?: string): Promise<any> => {
+    const res = await api.post(`/v1/admin/orders/${orderId}/accept`, null, {
+      params: { notes },
+    });
+    return res.data;
+  },
+
+  rejectOrder: async (orderId: string, notes?: string): Promise<any> => {
+    const res = await api.post(`/v1/admin/orders/${orderId}/reject`, null, {
+      params: { notes },
+    });
+    return res.data;
   },
 };

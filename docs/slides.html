@@ -141,13 +141,13 @@
         badge: "The Solution",
         title: "The FIELD-EX Digital Operating System",
         subtitle: "Unifying the value chain under strict role-based governance",
-        body: "<ul><li><strong>Transparent Produce Catalog & Price Fixing:</strong> Real-time FOB pricing, metric ton inventory, Brix sweetness ratings, and cultivar specifications.</li><li><strong>Deterministic State Machines:</strong> Strict finite state transitions enforcing payment verification, packhouse packing, and export dispatch.</li><li><strong>Operations Calendar API:</strong> End-to-end tracking of order placement, packhouse completion, vessel transit, and port arrival.</li><li><strong>Order Lifecycle History:</strong> Immutable audit trail of every status change, actor, and compliance note accessible to Admin & Manager.</li></ul>"
+        body: "<ul><li><strong>Exclusive Order Acceptance Gate:</strong> Buyer orders start in 'Awaiting Acceptance'; only Admin and Operations Managers possess the authority to accept and commit FIFO inventory or reject.</li><li><strong>Transparent Produce Catalog & Price Fixing:</strong> Real-time FOB pricing, metric ton inventory, Brix sweetness ratings, and cultivar specifications.</li><li><strong>Deterministic State Machines:</strong> Strict finite state transitions enforcing payment verification, packhouse packing, and export dispatch.</li><li><strong>Operations Calendar API:</strong> End-to-end tracking of order placement, packhouse completion, vessel transit, and port arrival.</li><li><strong>Order Lifecycle History:</strong> Immutable audit trail of every status change, actor, and compliance note accessible to Admin & Manager.</li></ul>"
       },
       {
         badge: "RBAC & Portals",
         title: "5 Dedicated Stakeholder Portals",
         subtitle: "Enterprise role separation with delegated managerial authority",
-        body: "<ul><li><strong>Operations Admin (<code>/admin</code>):</strong> Full system governance, unrestricted user provisioning, live watchdog event stream, price fixing, order lifecycle history.</li><li><strong>Operations Manager (<code>/manager</code>):</strong> Delegated role assignment (Buyer, QC, Logistics), catalog price fixing, order lifecycle history, operations calendar.</li><li><strong>International Buyer (<code>/buyer</code>):</strong> Browse produce cultivars & fixed prices, request RFQs, review orders, and track container telemetry.</li><li><strong>QC Inspector (<code>/qc</code>):</strong> Digital inspection scoring, Brix refractive testing, caliber grading, and quarantine enforcement.</li><li><strong>Logistics Director (<code>/logistics</code>):</strong> Cold storage allocation, pallet packaging, customs documentation, and port dispatch.</li></ul>"
+        body: "<ul><li><strong>Operations Admin (<code>/admin</code>):</strong> Full system governance, unrestricted user provisioning, live watchdog event stream, price fixing, order acceptance, order lifecycle history.</li><li><strong>Operations Manager (<code>/manager</code>):</strong> Delegated role assignment (Buyer, QC, Logistics), catalog price fixing, order acceptance & rejection, order lifecycle history, operations calendar.</li><li><strong>International Buyer (<code>/buyer</code>):</strong> Browse produce cultivars & fixed prices, request RFQs, place orders awaiting acceptance, and track container telemetry.</li><li><strong>QC Inspector (<code>/qc</code>):</strong> Digital inspection scoring, Brix refractive testing, caliber grading, and quarantine enforcement.</li><li><strong>Logistics Director (<code>/logistics</code>):</strong> Cold storage allocation, pallet packaging, customs documentation, and port dispatch.</li></ul>"
       },
       {
         badge: "Architecture",
@@ -169,15 +169,15 @@
       },
       {
         badge: "Security & Auditing",
-        title: "Security, Role Delegation & Audit Watchdog",
+        title: "Security, Role Delegation & Order Acceptance",
         subtitle: "Enterprise compliance and tamper-proof traceability",
-        body: "<ul><li><strong>Role Delegation:</strong> Admin assigns all roles; Manager provisions Buyer, QC Inspector, and Logistics roles.</li><li><strong>Protected HQ Accounts:</strong> Admin and Manager accounts cannot be escalated or modified by subordinate roles.</li><li><strong>Immutable Order Lifecycle History:</strong> Every transition records actor name, role, email, timestamp, and notes.</li><li><strong>Real-Time Watchdog Stream:</strong> Live activity feed on Admin Dashboard monitoring all auth, role, and order events.</li></ul>"
+        body: "<ul><li><strong>Order Acceptance Authority:</strong> Buyers cannot self-authorize orders; only Admin and Manager roles can accept (transition to PROCESSING & reserve FIFO stock) or reject.</li><li><strong>Role Delegation:</strong> Admin assigns all roles; Manager provisions Buyer, QC Inspector, and Logistics roles.</li><li><strong>Protected HQ Accounts:</strong> Admin and Manager accounts cannot be escalated or modified by subordinate roles.</li><li><strong>Immutable Order Lifecycle History:</strong> Every transition records actor name, role, email, timestamp, and notes.</li><li><strong>Real-Time Watchdog Stream:</strong> Live activity feed on Admin Dashboard monitoring all auth, role, and order events.</li></ul>"
       },
       {
         badge: "Verification",
         title: "Automated Test Suite & Code Quality",
         subtitle: "100% test pass rate with zero errors",
-        body: "<ul><li><strong>Backend Test Suite:</strong> 97 automated tests passing with 0 failures and 0 errors.</li><li><strong>State Machine & Concurrency:</strong> Strict validation of transition preconditions, optimistic locking, and access control.</li><li><strong>Frontend Build:</strong> Vite & React 19 build completed with 0 TypeScript compilation errors.</li><li><strong>Clean Startup:</strong> Deprecated Hibernate dialects and startup warnings eliminated.</li></ul>"
+        body: "<ul><li><strong>Backend Test Suite:</strong> 100 automated tests passing with 0 failures and 0 errors across state machines, security, and controllers.</li><li><strong>State Machine & Concurrency:</strong> Strict validation of transition preconditions, optimistic locking, and access control.</li><li><strong>Frontend Build:</strong> Vite & React 19 build completed with 0 TypeScript compilation errors.</li><li><strong>Clean Startup:</strong> Deprecated Hibernate dialects and startup warnings eliminated.</li></ul>"
       },
       {
         badge: "Roadmap",

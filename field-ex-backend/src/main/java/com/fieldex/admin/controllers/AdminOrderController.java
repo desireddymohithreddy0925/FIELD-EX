@@ -46,6 +46,26 @@ public class AdminOrderController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{id}/accept")
+    @Operation(summary = "Accept an order placed by a buyer (Admins & Managers only)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<OrderDto> acceptOrder(
+            @PathVariable UUID id, 
+            @RequestParam(required = false) String notes) {
+        orderStateMachineService.transitionState(id, OrderStatus.PROCESSING, notes != null && !notes.isBlank() ? notes : "Order accepted by operations management");
+        return ResponseEntity.ok(orderService.getOrderById(id));
+    }
+
+    @PostMapping("/{id}/reject")
+    @Operation(summary = "Reject an order placed by a buyer (Admins & Managers only)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<OrderDto> rejectOrder(
+            @PathVariable UUID id, 
+            @RequestParam(required = false) String notes) {
+        orderStateMachineService.transitionState(id, OrderStatus.CANCELLED, notes != null && !notes.isBlank() ? notes : "Order rejected by operations management");
+        return ResponseEntity.ok(orderService.getOrderById(id));
+    }
+
     @GetMapping("/{id}/history")
     @Operation(summary = "Get order lifecycle status history (Admins & Managers only)")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")

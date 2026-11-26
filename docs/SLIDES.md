@@ -78,8 +78,12 @@ To guarantee operational security and focused workflows, FIELD-EX provides **5 r
 
 Every critical lifecycle is governed by a **strict finite state machine**:
 
-- **Order State Machine**:
-  `QUOTE_ACCEPTED` ➔ `PAYMENT_PENDING` ➔ `PAID` ➔ `PROCESSING` ➔ `PACKED` ➔ `DISPATCHED` ➔ `IN_TRANSIT` ➔ `CUSTOMS` ➔ `DELIVERED`
+- **Order State Machine & Acceptance Gate**:
+  `QUOTE_ACCEPTED` (*Awaiting Acceptance*) ➔ `PROCESSING` (*Accepted by Admin/Manager & FIFO Inventory Reserved*) ➔ `PACKED` ➔ `DISPATCHED` ➔ `IN_TRANSIT` ➔ `CUSTOMS` ➔ `DELIVERED`
+- **Exclusive Operational Acceptance**:
+  - Buyer-placed orders enter `QUOTE_ACCEPTED` and cannot be self-transitioned.
+  - Dedicated endpoints `POST /api/v1/admin/orders/{id}/accept` and `/reject` restricted to `ADMIN` and `MANAGER`.
+  - Acceptance automatically triggers FIFO batch inventory allocation.
 - **Shipment State Machine**:
   `PREPARING` ➔ `PACKED` ➔ `DISPATCHED` ➔ `IN_TRANSIT` ➔ `CUSTOMS_HOLD` ➔ `DELIVERED`
 - **Quality Inspection Lifecycle**:
@@ -118,6 +122,9 @@ Every critical lifecycle is governed by a **strict finite state machine**:
   - `ADMIN` provisions and assigns all roles across the enterprise.
   - `MANAGER` holds delegated authority to provision `BUYER`, `QC_INSPECTOR`, and `LOGISTICS` roles.
   - Privileged HQ accounts (`ADMIN`, `MANAGER`) are protected against tampering.
+- **Admin & Manager Order Acceptance Authority**:
+  - Buyers cannot self-authorize fulfillment of their placed orders.
+  - Only `ADMIN` and `MANAGER` can approve orders into processing or reject/cancel them.
 - **Immutable Order Lifecycle History**:
   - Every status change records the actor, email, role, reason notes, and UTC timestamp.
   - Restricted strictly to `ADMIN` and `MANAGER`.
@@ -127,8 +134,8 @@ Every critical lifecycle is governed by a **strict finite state machine**:
 # 9. Verification & Code Quality
 
 - **Backend Automated Test Suite**:
-  - **97 tests passing (100% success rate, 0 failures, 0 errors)**.
-  - Unit tests, state machine transitions, concurrency locks, security `@PreAuthorize` verification.
+  - **100 tests passing (100% success rate, 0 failures, 0 errors)**.
+  - Unit tests, state machine transitions, order acceptance authorization, concurrency locks, security `@PreAuthorize` verification.
 - **Clean Production Build**:
   - Frontend built with Vite and TypeScript with 0 compilation errors.
   - Deprecated dialects and verbose startup queries eliminated.
@@ -138,6 +145,14 @@ Every critical lifecycle is governed by a **strict finite state machine**:
 # 10. Summary & Immediate Next Steps
 
 - **Completed**:
+  - Buyer order acceptance exclusively restricted to `ADMIN` and `MANAGER` roles.
+  - Delegated role administration for Operations Managers (`BUYER`, `QC_INSPECTOR`, `LOGISTICS`).
+  - Deprecated `ENGINEER` and `EDITOR` roles eradicated across the entire project.
+  - Cultivar variety pricing and specifications editing for both `ADMIN` and `MANAGER`.
+  - Operational Calendar API (`/api/v1/calendar/events`) and interactive calendar view.
+  - Order Lifecycle Audit History API (`/api/v1/admin/orders/{id}/history`) with UI modal.
+  - Real-time Admin activity watchdog stream (`/api/v1/admin/audit/recent`).
+  - Produce inventory management and digital export document generation.
   - Full B2B export workflow from quotation to delivery.
   - Manager role assignment delegation.
   - Produce catalog variety pricing and inventory.

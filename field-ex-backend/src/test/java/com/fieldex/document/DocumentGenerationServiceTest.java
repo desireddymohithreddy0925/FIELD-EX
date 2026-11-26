@@ -10,8 +10,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.thymeleaf.ITemplateEngine;
 import org.thymeleaf.context.IContext;
-import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.io.InputStream;
 import java.util.Optional;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 public class DocumentGenerationServiceTest {
 
     @Mock
-    private SpringTemplateEngine templateEngine;
+    private ITemplateEngine templateEngine;
     
     @Mock
     private FileStorageService fileStorageService;

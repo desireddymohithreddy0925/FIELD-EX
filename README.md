@@ -39,27 +39,36 @@ For in-depth analysis, interview findings, presentation material, and scope rati
      - `ORDER_DELIVERED`: Consignee receipt and delivery confirmation.
    - Interactive timeline calendar view at `/admin/calendar` and `/manager/calendar`.
 
-4. **Order Lifecycle Audit History (Admin & Manager Only)**:
+4. **Exclusive Admin & Manager Order Acceptance Workflow**:
+   - Commercial orders placed by international buyers start in `QUOTE_ACCEPTED` (*Awaiting Acceptance*).
+   - **Strict RBAC Rule**: Buyers cannot approve or transition their own orders into fulfillment.
+   - Dedicated management endpoints:
+     - `POST /api/v1/admin/orders/{id}/accept`: Transitions order to `PROCESSING`, triggers automatic FIFO batch inventory reservation, and records audit history.
+     - `POST /api/v1/admin/orders/{id}/reject`: Cancels the order and records reason notes in the audit trail.
+   - Enforced by both Spring Method Security (`@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")`) and the internal `OrderStateMachineService`.
+   - UI reflects this with prominent **Accept Order** / **Reject** controls on Admin and Manager consoles (`/admin/orders`, `/manager/orders`), and informative status callouts on the Buyer portal.
+
+5. **Order Lifecycle Audit History (Admin & Manager Only)**:
    - Dedicated endpoint `GET /api/v1/admin/orders/{id}/history` guarded by `@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")`.
    - Immutable chronological audit trail of state transitions, actor name, actor email, actor role, notes, and timestamps.
    - Accessible from Admin Orders Management and Order Details views.
 
-5. **Real-Time Admin Watchdog & Activity Audit Stream**:
+6. **Real-Time Admin Watchdog & Activity Audit Stream**:
    - Admin observability stream (`GET /api/v1/admin/audit/recent` and `GET /api/v1/admin/audit/logs`) restricted to `ADMIN`.
    - Live real-time dashboard widget monitoring authentication events, role changes, price updates, order transitions, and system executions.
 
-6. **Deterministic B2B State Machines**:
-   - Strict transition graphs for order lifecycles (`QUOTE_ACCEPTED` ➔ `PAYMENT_PENDING` ➔ `PAID` ➔ `PROCESSING` ➔ `PACKED` ➔ `DISPATCHED` ➔ `IN_TRANSIT` ➔ `CUSTOMS` ➔ `DELIVERED`).
+7. **Deterministic B2B State Machines**:
+   - Strict transition graphs for order lifecycles (`QUOTE_ACCEPTED` ➔ `PROCESSING` ➔ `PACKED` ➔ `DISPATCHED` ➔ `IN_TRANSIT` ➔ `CUSTOMS` ➔ `DELIVERED`).
    - Role-governed authorization: State transitions strictly validated across Admin, Manager, and Logistics roles.
 
-7. **Standardized Digital QC Inspections**:
+8. **Standardized Digital QC Inspections**:
    - Pre-shipment batch scoring for sugar Brix (°Bx), pulp firmness (kg/cm²), fruit diameter caliber, visual defect percentage, and pest quarantine checks.
 
-8. **Cold-Chain & Telemetry Monitoring**:
+9. **Cold-Chain & Telemetry Monitoring**:
    - Out-of-bounds temperature and humidity excursion tracking (+1°C to +4°C tolerance) across warehouse cold rooms and reefer shipping containers.
 
-9. **Digital Export Document Vault**:
-   - Linked Phytosanitary Certificates, Certificates of Origin, Bills of Lading, and Commercial Invoices with lifecycle status tracking.
+10. **Digital Export Document Vault**:
+    - Linked Phytosanitary Certificates, Certificates of Origin, Bills of Lading, and Commercial Invoices with lifecycle status tracking.
 
 ---
 
@@ -69,8 +78,8 @@ FIELD-EX provides **5 dedicated portals** with strict role-based access control 
 
 | Portal | Role | Route | Key Functions & Responsibilities | Demo Login |
 | :--- | :--- | :--- | :--- | :--- |
-| **Operations Admin** | `ADMIN` | `/admin` | Unrestricted role assignment, live system watchdog stream, catalog price fixing, order lifecycle history, operations calendar | `admin@field-ex.com` / `password123` |
-| **Operations Manager** | `MANAGER` | `/manager` | Delegated role assignment (Buyer, QC, Logistics), produce price fixing, order lifecycle history, operations calendar, order approvals | `manager@field-ex.com` / `password123` |
+| **Operations Admin** | `ADMIN` | `/admin` | Unrestricted role assignment, live system watchdog stream, catalog price fixing, order lifecycle history, operations calendar, buyer order acceptance/rejection | `admin@field-ex.com` / `password123` |
+| **Operations Manager** | `MANAGER` | `/manager` | Delegated role assignment (Buyer, QC, Logistics), produce price fixing, order lifecycle history, operations calendar, buyer order acceptance/rejection | `manager@field-ex.com` / `password123` |
 | **International Buyer** | `BUYER` | `/buyer` | Browse live produce catalog & fixed prices, RFQ quotations, order placement, shipment tracking, calendar milestones | `buyer@field-ex.com` / `password123` |
 | **QC Lab Inspector** | `QC_INSPECTOR` | `/qc` | Digital inspection rubric scoring (Brix, caliber, defects), lot approvals, and quarantine controls | `qc@field-ex.com` / `password123` |
 | **Logistics Director** | `LOGISTICS` | `/logistics` | Cold storage room allocation, packaging schedules, export document vault, port dispatch | `logistics@field-ex.com` / `password123` |

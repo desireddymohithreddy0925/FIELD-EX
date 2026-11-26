@@ -41,6 +41,8 @@ export const buyerApi = {
   getOrders: (page = 0, size = 10, status?: string) => 
     api.get<any>('/orders/me', { params: { page, size, status } }).then(res => res.data),
   getOrderDetails: (id: string) => api.get(`/orders/${id}`).then(res => res.data),
+  createOrderFromQuotation: (quotationId: string) => 
+    api.post(`/orders/from-quotation/${quotationId}`).then(res => res.data),
   
   // Shipments
   getMyShipments: () => api.get('/shipments/me').then(res => res.data),

@@ -33,10 +33,17 @@ export default function OrdersPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PENDING_PAYMENT': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'CONFIRMED': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'QUOTE_ACCEPTED': return 'bg-amber-100 text-amber-800 border-amber-300 font-bold';
+      case 'PENDING_PAYMENT':
+      case 'PAYMENT_PENDING': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'CONFIRMED':
+      case 'PAID': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'PROCESSING': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'SHIPPED': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      case 'PACKED': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      case 'SHIPPED':
+      case 'DISPATCHED':
+      case 'IN_TRANSIT': return 'bg-sky-100 text-sky-800 border-sky-200';
+      case 'CUSTOMS': return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'DELIVERED': return 'bg-green-100 text-green-800 border-green-200';
       case 'CANCELLED': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -58,10 +65,9 @@ export default function OrdersPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">All Statuses</SelectItem>
-              <SelectItem value="PENDING_PAYMENT">Pending Payment</SelectItem>
-              <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+              <SelectItem value="QUOTE_ACCEPTED">Awaiting Acceptance</SelectItem>
+              <SelectItem value="PAYMENT_PENDING">Pending Payment</SelectItem>
               <SelectItem value="PROCESSING">Processing</SelectItem>
-              <SelectItem value="SHIPPED">Shipped</SelectItem>
               <SelectItem value="DELIVERED">Delivered</SelectItem>
               <SelectItem value="CANCELLED">Cancelled</SelectItem>
             </SelectContent>
@@ -107,7 +113,7 @@ export default function OrdersPage() {
                   
                   <div className="flex flex-col items-end gap-2">
                     <Badge variant="outline" className={getStatusColor(o.status)}>
-                      {o.status.replace('_', ' ')}
+                      {o.status === 'QUOTE_ACCEPTED' ? 'Awaiting Acceptance' : o.status?.replace('_', ' ')}
                     </Badge>
                   </div>
                 </div>

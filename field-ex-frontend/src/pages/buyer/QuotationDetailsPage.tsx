@@ -216,9 +216,29 @@ export default function QuotationDetailsPage() {
             )}
             
             {quotation.status === 'ACCEPTED' && (
-              <CardFooter className="border-t p-6 bg-green-50 justify-center">
-                <p className="text-sm text-green-700 text-center font-medium flex items-center">
-                  <Check className="w-4 h-4 mr-2" /> Quotation Accepted. Order created.
+              <CardFooter className="flex flex-col gap-3 border-t p-6 bg-green-50/50">
+                <p className="text-sm text-green-700 text-center font-medium flex items-center justify-center">
+                  <Check className="w-4 h-4 mr-2" /> Quotation Accepted by Buyer
+                </p>
+                <Button 
+                  className="w-full bg-primary hover:bg-primary/90 text-white font-semibold"
+                  onClick={async () => {
+                    try {
+                      setActionLoading(true);
+                      const newOrder = await buyerApi.createOrderFromQuotation(quotation.id);
+                      navigate(`/buyer/orders/${newOrder.id}`);
+                    } catch {
+                      navigate('/buyer/orders');
+                    } finally {
+                      setActionLoading(false);
+                    }
+                  }}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? 'Placing Order...' : 'Place Order with Exporter →'}
+                </Button>
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Once placed, the order is registered and awaiting acceptance by FIELD-EX Admin / Manager.
                 </p>
               </CardFooter>
             )}

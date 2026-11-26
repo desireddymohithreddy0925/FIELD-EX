@@ -10,8 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.ITemplateEngine;
 import org.thymeleaf.context.Context;
-import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import com.fieldex.user.User;
 import com.fieldex.user.UserRepository;
@@ -28,7 +28,7 @@ import java.util.UUID;
 @Slf4j
 public class DocumentGenerationService {
 
-    private final SpringTemplateEngine templateEngine;
+    private final ITemplateEngine templateEngine;
     private final FileStorageService fileStorageService;
     private final ExportDocumentRepository exportDocumentRepository;
     private final OrderRepository orderRepository;
