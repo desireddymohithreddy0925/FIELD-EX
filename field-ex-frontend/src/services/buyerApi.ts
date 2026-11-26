@@ -22,6 +22,12 @@ export const buyerApi = {
   // Catalog
   getFruits: (params?: any) => api.get<Page<any>>('/catalog/fruits', { params }).then(res => res.data),
   getFruitDetails: (id: string) => api.get(`/catalog/fruits/${id}`).then(res => res.data),
+  createFruit: (data: any) => api.post('/catalog/fruits', data).then(res => res.data),
+  updateFruit: (id: string, data: any) => api.put(`/catalog/fruits/${id}`, data).then(res => res.data),
+  deleteFruit: (id: string) => api.delete(`/catalog/fruits/${id}`).then(res => res.data),
+  createVariety: (fruitId: string, data: any) => api.post(`/catalog/fruits/${fruitId}/varieties`, data).then(res => res.data),
+  updateVariety: (varietyId: string, data: any) => api.put(`/catalog/varieties/${varietyId}`, data).then(res => res.data),
+  deleteVariety: (varietyId: string) => api.delete(`/catalog/varieties/${varietyId}`).then(res => res.data),
   
   // Quotations
   getQuotations: (page = 0, size = 10, status?: string) => 
