@@ -256,7 +256,9 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        Buyer buyer = buyerRepository.findByContactEmail("buyer@field-ex.com").orElse(null);
+        Buyer buyer = buyerRepository.findByContactEmail("buyer@field-ex.com")
+                .or(() -> buyerRepository.findAll().stream().findFirst())
+                .orElse(null);
         if (buyer == null) return;
 
         List<FruitVariety> varieties = fruitVarietyRepository.findAll();

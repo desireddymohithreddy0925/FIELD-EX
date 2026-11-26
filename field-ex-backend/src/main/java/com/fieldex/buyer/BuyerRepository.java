@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface BuyerRepository extends JpaRepository<Buyer, UUID> {
     Optional<Buyer> findByUserId(UUID userId);
+    Optional<Buyer> findByContactEmail(String contactEmail);
 }
