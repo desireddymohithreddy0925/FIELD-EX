@@ -78,6 +78,15 @@ public class CatalogController {
         return ResponseEntity.ok(catalogService.updateVariety(varietyId, request));
     }
 
+    @PatchMapping("/varieties/{varietyId}/pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Fix price, currency, and stock quantity for a variety", description = "Accessible by ADMIN and MANAGER")
+    public ResponseEntity<CatalogVarietyDto> fixPriceAndQuantity(
+            @PathVariable UUID varietyId,
+            @Valid @RequestBody PricingUpdateRequest request) {
+        return ResponseEntity.ok(catalogService.updateVarietyPricing(varietyId, request));
+    }
+
     @DeleteMapping("/varieties/{varietyId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Soft delete / deactivate an export variety")

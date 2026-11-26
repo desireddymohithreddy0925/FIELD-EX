@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
@@ -24,7 +24,7 @@ public class QuotationJobService {
     public void expireQuotations() {
         log.info("Running job to expire quotations...");
         List<Quotation> expiredQuotations = quotationRepository.findByStatusAndValidityDateBefore(
-                QuotationStatus.SENT, Instant.now()
+                QuotationStatus.SENT, OffsetDateTime.now()
         );
 
         for (Quotation quotation : expiredQuotations) {

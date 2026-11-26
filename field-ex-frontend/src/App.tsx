@@ -19,6 +19,9 @@ import {
 // Dashboards
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
+const CatalogPricingPage = lazy(() => import('./pages/admin/CatalogPricingPage'))
+const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage'))
+const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'))
 const QcDashboard = lazy(() => import('./pages/qc/QcDashboard'))
 const LogisticsDashboard = lazy(() => import('./pages/logistics/LogisticsDashboard'))
 const ManagerDashboard = lazy(() => import('./pages/manager/ManagerDashboard'))
@@ -71,14 +74,15 @@ function App() {
                   <Route path="users" element={<AdminUsersPage />} />
                   <Route path="suppliers" element={<PlaceholderPage name="Suppliers" />} />
                   <Route path="buyers" element={<PlaceholderPage name="Buyers" />} />
-                  <Route path="catalog" element={<PlaceholderPage name="Catalog" />} />
+                  <Route path="catalog" element={<CatalogPricingPage />} />
+                  <Route path="calendar" element={<CalendarPage />} />
                   <Route path="procurement" element={<PlaceholderPage name="Procurement" />} />
                   <Route path="qc" element={<PlaceholderPage name="QC" />} />
                   <Route path="batches" element={<PlaceholderPage name="Batches" />} />
                   <Route path="warehouses" element={<PlaceholderPage name="Warehouses" />} />
                   <Route path="inventory" element={<PlaceholderPage name="Inventory" />} />
                   <Route path="cold-chain" element={<PlaceholderPage name="Cold Chain" />} />
-                  <Route path="orders" element={<PlaceholderPage name="Orders" />} />
+                  <Route path="orders" element={<AdminOrdersPage />} />
                   <Route path="packaging" element={<PlaceholderPage name="Packaging" />} />
                   <Route path="documents" element={<PlaceholderPage name="Documents" />} />
                   <Route path="shipments" element={<PlaceholderPage name="Shipments" />} />
@@ -136,7 +140,10 @@ function App() {
               <Route element={<RoleRoute allowedRoles={['MANAGER']} />}>
                 <Route path="/manager" element={<ManagerLayout />}>
                   <Route index element={<ManagerDashboard />} />
-                  <Route path="orders" element={<PlaceholderPage name="Operations Orders" />} />
+                  <Route path="users" element={<AdminUsersPage />} />
+                  <Route path="catalog" element={<CatalogPricingPage />} />
+                  <Route path="calendar" element={<CalendarPage />} />
+                  <Route path="orders" element={<AdminOrdersPage />} />
                   <Route path="quotations" element={<PlaceholderPage name="Manager Quotations" />} />
                   <Route path="procurement" element={<PlaceholderPage name="Procurement Batches" />} />
                   <Route path="inventory" element={<PlaceholderPage name="Inventory Control" />} />

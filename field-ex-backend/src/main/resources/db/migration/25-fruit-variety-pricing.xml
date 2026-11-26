@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="25" author="field-ex">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="fruit_varieties" columnName="price_per_kg"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="fruit_varieties">
+            <column name="price_per_kg" type="numeric(12,2)" defaultValueNumeric="0.00"/>
+            <column name="currency" type="varchar(10)" defaultValue="USD"/>
+            <column name="available_quantity" type="numeric(12,2)" defaultValueNumeric="100.00"/>
+            <column name="min_order_quantity" type="numeric(12,2)" defaultValueNumeric="1.00"/>
+            <column name="unit" type="varchar(20)" defaultValue="MT"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

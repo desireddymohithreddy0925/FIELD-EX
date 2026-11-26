@@ -22,6 +22,11 @@ public class CatalogVarietyDto {
     private String sizeProfile;
     private String colorProfile;
     private String description;
+    private java.math.BigDecimal pricePerKg;
+    private String currency;
+    private Double availableQuantity;
+    private Double minOrderQuantity;
+    private String unit;
     private boolean active;
 
     // Backward compatibility constructor for existing tests

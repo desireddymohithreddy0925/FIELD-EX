@@ -39,9 +39,22 @@ public class AdminUserService {
     }
 
     @Transactional
-    public UserDto assignRole(UUID userId, Role newRole, String adminUsername) {
+    public UserDto assignRole(UUID userId, Role newRole, String operatorUsername) {
+        User operator = userRepository.findByEmail(operatorUsername).orElse(null);
+        if (operator != null && operator.getRole() == Role.MANAGER) {
+            if (newRole == Role.ADMIN || newRole == Role.MANAGER) {
+                throw new org.springframework.security.access.AccessDeniedException("Managers can only assign BUYER, QC_INSPECTOR, or LOGISTICS roles");
+            }
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
+
+        if (operator != null && operator.getRole() == Role.MANAGER) {
+            if (user.getRole() == Role.ADMIN || user.getRole() == Role.MANAGER) {
+                throw new org.springframework.security.access.AccessDeniedException("Managers cannot modify Administrator or Manager accounts");
+            }
+        }
 
         Role oldRole = user.getRole();
         user.setRole(newRole);
@@ -61,18 +74,25 @@ public class AdminUserService {
         User saved = userRepository.save(user);
 
         auditLogService.logEvent(
-                "ADMIN_ASSIGN_ROLE",
+                "ASSIGN_ROLE",
                 "USER",
                 userId.toString(),
-                String.format("Admin '%s' reassigned role for %s from %s to %s", adminUsername, user.getEmail(), oldRole, newRole)
+                String.format("Operator '%s' reassigned role for %s from %s to %s", operatorUsername, user.getEmail(), oldRole, newRole)
         );
 
-        log.info("Admin '{}' assigned role '{}' to user '{}'", adminUsername, newRole, user.getEmail());
+        log.info("Operator '{}' assigned role '{}' to user '{}'", operatorUsername, newRole, user.getEmail());
         return mapToDto(saved);
     }
 
     @Transactional
-    public UserDto createUser(CreateUserRequest request, String adminUsername) {
+    public UserDto createUser(CreateUserRequest request, String operatorUsername) {
+        User operator = userRepository.findByEmail(operatorUsername).orElse(null);
+        if (operator != null && operator.getRole() == Role.MANAGER) {
+            if (request.getRole() == Role.ADMIN || request.getRole() == Role.MANAGER) {
+                throw new org.springframework.security.access.AccessDeniedException("Managers can only create users with BUYER, QC_INSPECTOR, or LOGISTICS roles");
+            }
+        }
+
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("User with email '" + request.getEmail() + "' already exists");
         }
@@ -99,29 +119,36 @@ public class AdminUserService {
         }
 
         auditLogService.logEvent(
-                "ADMIN_CREATE_USER",
+                "CREATE_USER_WITH_ROLE",
                 "USER",
                 saved.getId().toString(),
-                String.format("Admin '%s' created user '%s' with assigned role '%s'", adminUsername, saved.getEmail(), request.getRole())
+                String.format("Operator '%s' created user '%s' with assigned role '%s'", operatorUsername, saved.getEmail(), request.getRole())
         );
 
-        log.info("Admin '{}' created user '{}' with role '{}'", adminUsername, saved.getEmail(), request.getRole());
+        log.info("Operator '{}' created user '{}' with role '{}'", operatorUsername, saved.getEmail(), request.getRole());
         return mapToDto(saved);
     }
 
     @Transactional
-    public UserDto toggleUserStatus(UUID userId, boolean active, String adminUsername) {
+    public UserDto toggleUserStatus(UUID userId, boolean active, String operatorUsername) {
+        User operator = userRepository.findByEmail(operatorUsername).orElse(null);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
+
+        if (operator != null && operator.getRole() == Role.MANAGER) {
+            if (user.getRole() == Role.ADMIN || user.getRole() == Role.MANAGER) {
+                throw new org.springframework.security.access.AccessDeniedException("Managers cannot modify Administrator or Manager accounts");
+            }
+        }
 
         user.setActive(active);
         User saved = userRepository.save(user);
 
         auditLogService.logEvent(
-                "ADMIN_TOGGLE_STATUS",
+                "TOGGLE_USER_STATUS",
                 "USER",
                 userId.toString(),
-                String.format("Admin '%s' set active=%s for %s", adminUsername, active, user.getEmail())
+                String.format("Operator '%s' set active=%s for %s", operatorUsername, active, user.getEmail())
         );
 
         return mapToDto(saved);

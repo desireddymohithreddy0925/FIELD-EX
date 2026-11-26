@@ -29,9 +29,9 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Admin User & Role Management", description = "Endpoints for administrators to strictly assign roles and govern users")
+@Tag(name = "Admin & Manager User Access", description = "Endpoints for administrators and operations managers to assign roles and manage users")
 public class AdminUserController {
 
     private final AdminUserService adminUserService;

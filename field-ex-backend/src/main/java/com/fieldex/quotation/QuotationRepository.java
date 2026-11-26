@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @Repository
 public interface QuotationRepository extends JpaRepository<Quotation, UUID>, JpaSpecificationExecutor<Quotation> {
-    List<Quotation> findByStatusAndValidityDateBefore(QuotationStatus status, Instant date);
+    List<Quotation> findByStatusAndValidityDateBefore(QuotationStatus status, OffsetDateTime date);
 
     @EntityGraph(attributePaths = {"buyer"})
     Page<Quotation> findAll(Pageable pageable);

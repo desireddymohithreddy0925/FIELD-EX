@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Users, Truck, Globe, ShieldCheck, Warehouse, FileText, Anchor, Sprout, ArrowRight, UserCheck } from 'lucide-react';
+import { Users, Truck, Globe, ShieldCheck, Warehouse, FileText, Anchor, Sprout, ArrowRight, UserCheck, Activity, RefreshCw } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Link } from 'react-router-dom';
+import { adminApi, type AuditLogDto } from '../../services/adminApi';
 
 const dummyData = [
   { name: 'Jan', revenue: 4000, orders: 24 },
@@ -16,6 +18,24 @@ const dummyData = [
 ];
 
 export default function AdminDashboard() {
+  const [auditLogs, setAuditLogs] = useState<AuditLogDto[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  const fetchLogs = async () => {
+    setIsLoadingLogs(true);
+    try {
+      const logs = await adminApi.getRecentAuditLogs();
+      setAuditLogs(Array.isArray(logs) ? logs.slice(0, 8) : []);
+    } catch {
+      // Keep silent fallback
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
   return (
     <div className="space-y-8">
       {/* Overview Header */}
@@ -206,6 +226,72 @@ export default function AdminDashboard() {
             </Button>
           </Link>
         </div>
+      </Card>
+
+      {/* Live System Activity Stream (Admin Observability / Watchdog) */}
+      <Card className="border-border shadow-soft bg-card overflow-hidden">
+        <CardHeader className="border-b border-border py-4 px-6 flex flex-row items-center justify-between bg-muted/20">
+          <div className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-primary" />
+            <div>
+              <CardTitle className="text-base font-heading font-bold text-foreground">
+                Real-Time System Watchdog & Audit Stream
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Admin visibility feed: monitoring all authentication, role updates, pricing fixes, and order transitions.
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchLogs} disabled={isLoadingLogs} className="gap-1.5 text-xs">
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingLogs ? 'animate-spin' : ''}`} />
+            Refresh Feed
+          </Button>
+        </CardHeader>
+
+        <CardContent className="p-0">
+          {auditLogs.length === 0 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">
+              No recent audit logs available or all systems quiescent.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40 text-muted-foreground uppercase tracking-wider font-semibold">
+                    <th className="py-2.5 px-6">Timestamp</th>
+                    <th className="py-2.5 px-6">Actor / Operator</th>
+                    <th className="py-2.5 px-6">Action Executed</th>
+                    <th className="py-2.5 px-6">Resource</th>
+                    <th className="py-2.5 px-6">Metadata Details</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {auditLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-muted/10 font-mono">
+                      <td className="py-3 px-6 text-muted-foreground text-[11px]">
+                        {log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : ''}
+                      </td>
+                      <td className="py-3 px-6 font-semibold text-foreground">
+                        {log.actor}
+                      </td>
+                      <td className="py-3 px-6">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="py-3 px-6 text-muted-foreground">
+                        {log.resourceType || 'SYSTEM'} {log.resourceId ? `(${log.resourceId.slice(0, 8)}...)` : ''}
+                      </td>
+                      <td className="py-3 px-6 text-foreground text-[11px] font-sans max-w-xs truncate">
+                        {log.metadata || 'Standard system execution'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
       </Card>
     </div>
   );

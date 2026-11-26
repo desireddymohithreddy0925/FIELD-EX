@@ -95,6 +95,11 @@ public class CatalogService {
                 .sizeProfile(request.getSizeProfile() != null ? request.getSizeProfile() : "Standard Export Caliber")
                 .colorProfile(request.getColorProfile() != null ? request.getColorProfile() : "Standard")
                 .description(request.getDescription())
+                .pricePerKg(request.getPricePerKg() != null ? request.getPricePerKg() : java.math.BigDecimal.valueOf(2.50))
+                .currency(request.getCurrency() != null ? request.getCurrency() : "USD")
+                .availableQuantity(request.getAvailableQuantity() != null ? request.getAvailableQuantity() : 100.0)
+                .minOrderQuantity(request.getMinOrderQuantity() != null ? request.getMinOrderQuantity() : 1.0)
+                .unit(request.getUnit() != null ? request.getUnit() : "MT")
                 .build();
         variety.setActive(request.getActive() != null ? request.getActive() : true);
         FruitVariety saved = varietyRepository.save(variety);
@@ -114,7 +119,25 @@ public class CatalogService {
         if (request.getSizeProfile() != null) variety.setSizeProfile(request.getSizeProfile());
         if (request.getColorProfile() != null) variety.setColorProfile(request.getColorProfile());
         if (request.getDescription() != null) variety.setDescription(request.getDescription());
+        if (request.getPricePerKg() != null) variety.setPricePerKg(request.getPricePerKg());
+        if (request.getCurrency() != null) variety.setCurrency(request.getCurrency());
+        if (request.getAvailableQuantity() != null) variety.setAvailableQuantity(request.getAvailableQuantity());
+        if (request.getMinOrderQuantity() != null) variety.setMinOrderQuantity(request.getMinOrderQuantity());
+        if (request.getUnit() != null) variety.setUnit(request.getUnit());
         if (request.getActive() != null) variety.setActive(request.getActive());
+        FruitVariety updated = varietyRepository.save(variety);
+        return mapVarietyToDto(updated);
+    }
+
+    @Transactional
+    public CatalogVarietyDto updateVarietyPricing(UUID varietyId, PricingUpdateRequest request) {
+        FruitVariety variety = varietyRepository.findById(varietyId)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Variety not found with id: " + varietyId));
+        variety.setPricePerKg(request.getPricePerKg());
+        if (request.getCurrency() != null) variety.setCurrency(request.getCurrency());
+        if (request.getAvailableQuantity() != null) variety.setAvailableQuantity(request.getAvailableQuantity());
+        if (request.getMinOrderQuantity() != null) variety.setMinOrderQuantity(request.getMinOrderQuantity());
+        if (request.getUnit() != null) variety.setUnit(request.getUnit());
         FruitVariety updated = varietyRepository.save(variety);
         return mapVarietyToDto(updated);
     }
@@ -160,6 +183,11 @@ public class CatalogService {
                 .sizeProfile(v.getSizeProfile())
                 .colorProfile(v.getColorProfile())
                 .description(v.getDescription())
+                .pricePerKg(v.getPricePerKg())
+                .currency(v.getCurrency() != null ? v.getCurrency() : "USD")
+                .availableQuantity(v.getAvailableQuantity() != null ? v.getAvailableQuantity() : 100.0)
+                .minOrderQuantity(v.getMinOrderQuantity() != null ? v.getMinOrderQuantity() : 1.0)
+                .unit(v.getUnit() != null ? v.getUnit() : "MT")
                 .active(v.isActive())
                 .build();
     }

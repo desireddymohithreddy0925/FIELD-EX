@@ -9,7 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +33,7 @@ class QuotationJobServiceTest {
         quotation.setId(UUID.randomUUID());
         quotation.setStatus(QuotationStatus.SENT);
 
-        when(quotationRepository.findByStatusAndValidityDateBefore(eq(QuotationStatus.SENT), any(Instant.class)))
+        when(quotationRepository.findByStatusAndValidityDateBefore(eq(QuotationStatus.SENT), any(OffsetDateTime.class)))
                 .thenReturn(List.of(quotation));
 
         quotationJobService.expireQuotations();

@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import com.fieldex.shipment.ShipmentStateMachineService;
@@ -29,7 +29,7 @@ public class ShipmentJobService {
     @Transactional
     public void detectDelayedShipments() {
         log.info("Running job to detect delayed shipments...");
-        Instant now = Instant.now();
+        OffsetDateTime now = OffsetDateTime.now();
         
         List<ShipmentStatus> activeStatuses = List.of(
                 ShipmentStatus.PREPARING,
@@ -47,7 +47,7 @@ public class ShipmentJobService {
             shipmentStateMachineService.transitionState(shipment.getId(), ShipmentStatus.DELAYED, "Marked delayed by system job");
             log.info("Shipment {} marked as delayed.", shipment.getId());
 
-            String key = "delayed_shipment_" + shipment.getId() + "_" + now.getEpochSecond();
+            String key = "delayed_shipment_" + shipment.getId() + "_" + now.toEpochSecond();
             String buyerEmail = null;
             if (shipment.getOrder() != null) {
                 if (shipment.getOrder().getBuyer() != null) {

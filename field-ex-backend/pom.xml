@@ -247,6 +247,7 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
 					<mainClass>com.fieldex.FieldExApplication</mainClass>
+					<jvmArguments>--enable-native-access=ALL-UNNAMED</jvmArguments>
 				</configuration>
 			</plugin>
 			<plugin>

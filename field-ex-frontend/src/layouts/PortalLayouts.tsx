@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Tractor, Globe, ClipboardCheck, PackageSearch, 
   Truck, FileText, Bell, Ship, Building, BookOpen, Warehouse, 
   Thermometer, Archive, BarChart, History, Box, ShieldCheck, CheckSquare, AlertTriangle, 
-  Clock, Sprout, ArrowRight, Sparkles
+  Clock, Sprout, ArrowRight, Sparkles, Calendar
 } from "lucide-react"
 import { AppLayout } from "../components/layout/AppLayout"
 import alphonsoMangoImg from "../assets/produce/alphonso-mango.jpg"
@@ -581,14 +581,15 @@ const adminNav = [
   { name: 'Users', path: '/admin/users', icon: Users },
   { name: 'Suppliers', path: '/admin/suppliers', icon: Tractor },
   { name: 'Buyers', path: '/admin/buyers', icon: Users },
-  { name: 'Catalog', path: '/admin/catalog', icon: Globe },
+  { name: 'Catalog & Pricing', path: '/admin/catalog', icon: Globe },
+  { name: 'Operations Calendar', path: '/admin/calendar', icon: Calendar },
   { name: 'Procurement', path: '/admin/procurement', icon: FileText },
   { name: 'QC', path: '/admin/qc', icon: ShieldCheck },
   { name: 'Batches', path: '/admin/batches', icon: Box },
   { name: 'Warehouses', path: '/admin/warehouses', icon: Warehouse },
   { name: 'Inventory', path: '/admin/inventory', icon: PackageSearch },
   { name: 'Cold Chain', path: '/admin/cold-chain', icon: Thermometer },
-  { name: 'Orders', path: '/admin/orders', icon: FileText },
+  { name: 'Orders & Audit', path: '/admin/orders', icon: FileText },
   { name: 'Packaging', path: '/admin/packaging', icon: Archive },
   { name: 'Documents', path: '/admin/documents', icon: BookOpen },
   { name: 'Shipments', path: '/admin/shipments', icon: Ship },
@@ -650,7 +651,10 @@ export function LogisticsLayout() {
 // --- Manager Layout ---
 const managerNav = [
   { name: 'Dashboard', path: '/manager', icon: LayoutDashboard },
-  { name: 'Orders', path: '/manager/orders', icon: FileText },
+  { name: 'User Access', path: '/manager/users', icon: Users },
+  { name: 'Catalog & Pricing', path: '/manager/catalog', icon: Globe },
+  { name: 'Operations Calendar', path: '/manager/calendar', icon: Calendar },
+  { name: 'Orders & Audit', path: '/manager/orders', icon: FileText },
   { name: 'Quotations', path: '/manager/quotations', icon: FileText },
   { name: 'Procurement', path: '/manager/procurement', icon: Tractor },
   { name: 'Inventory', path: '/manager/inventory', icon: PackageSearch },

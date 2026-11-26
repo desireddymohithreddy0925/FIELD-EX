@@ -45,4 +45,11 @@ public class AdminOrderController {
         orderStateMachineService.transitionState(id, targetStatus, notes);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{id}/history")
+    @Operation(summary = "Get order lifecycle status history (Admins & Managers only)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<java.util.List<com.fieldex.order.dto.OrderStatusHistoryDto>> getOrderHistory(@PathVariable UUID id) {
+        return ResponseEntity.ok(orderService.getOrderHistory(id));
+    }
 }

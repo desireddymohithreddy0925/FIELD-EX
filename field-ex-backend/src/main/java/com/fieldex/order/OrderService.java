@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -128,6 +129,41 @@ public class OrderService {
         }
         
         return mapToDto(order);
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.fieldex.order.dto.OrderStatusHistoryDto> getOrderHistory(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+
+        List<OrderStatusHistory> histories = historyRepository.findByOrderIdOrderByCreatedAtDesc(orderId);
+        
+        if (histories.isEmpty()) {
+            return List.of(com.fieldex.order.dto.OrderStatusHistoryDto.builder()
+                    .id(UUID.randomUUID())
+                    .orderId(order.getId())
+                    .orderNumber(order.getOrderNumber())
+                    .status(order.getStatus().name())
+                    .actorName("SYSTEM")
+                    .actorEmail("system@field-ex.com")
+                    .actorRole("SYSTEM")
+                    .notes("Order initialized at " + order.getStatus().name())
+                    .timestamp(order.getCreatedAt())
+                    .build());
+        }
+
+        return histories.stream().map(h -> com.fieldex.order.dto.OrderStatusHistoryDto.builder()
+                .id(h.getId())
+                .orderId(order.getId())
+                .orderNumber(order.getOrderNumber())
+                .status(h.getStatus().name())
+                .actorName(h.getActor() != null ? h.getActor().getName() : "SYSTEM")
+                .actorEmail(h.getActor() != null ? h.getActor().getEmail() : "system@field-ex.com")
+                .actorRole(h.getActor() != null && h.getActor().getRole() != null ? h.getActor().getRole().name() : "SYSTEM")
+                .notes(h.getNotes() != null ? h.getNotes() : "Status updated to " + h.getStatus().name())
+                .timestamp(h.getCreatedAt())
+                .build()
+        ).toList();
     }
 
     private com.fieldex.order.dto.OrderDto mapToDto(Order order) {

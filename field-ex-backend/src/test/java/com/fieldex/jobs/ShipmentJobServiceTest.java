@@ -15,7 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -67,7 +67,7 @@ class ShipmentJobServiceTest {
         );
 
         when(shipmentRepository.findByStatusInAndExpectedDeliveryBefore(
-                anyList(), any(Instant.class))).thenReturn(Collections.singletonList(shipment));
+                anyList(), any(OffsetDateTime.class))).thenReturn(Collections.singletonList(shipment));
 
         shipmentJobService.detectDelayedShipments();
 

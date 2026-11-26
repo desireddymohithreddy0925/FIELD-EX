@@ -40,4 +40,14 @@ public class AuditLogService {
         auditLogRepository.save(auditLog);
         log.info("Audit logged: action={}, actor={}", action, actor);
     }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<AuditLog> getLogs(org.springframework.data.domain.Pageable pageable) {
+        return auditLogRepository.findAllByOrderByTimestampDesc(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<AuditLog> getRecentLogs() {
+        return auditLogRepository.findTop50ByOrderByTimestampDesc();
+    }
 }
