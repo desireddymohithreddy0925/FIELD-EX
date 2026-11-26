@@ -34,6 +34,9 @@ public class CatalogService {
                 .and((root, query, cb) -> cb.isTrue(root.get("active")));
                 
         Page<Fruit> fruitPage = fruitRepository.findAll(spec, pageable);
+        if (fruitPage.isEmpty()) {
+            return Page.empty(pageable);
+        }
 
         List<UUID> fruitIds = fruitPage.getContent().stream()
                 .map(Fruit::getId)
