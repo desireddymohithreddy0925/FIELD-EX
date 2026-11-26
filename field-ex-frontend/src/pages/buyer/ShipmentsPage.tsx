@@ -12,16 +12,18 @@ export default function ShipmentsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchShipments();
+    fetchShipments(false);
+    const timer = setInterval(() => fetchShipments(true), 4000);
+    return () => clearInterval(timer);
   }, []);
 
-  const fetchShipments = async () => {
+  const fetchShipments = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await buyerApi.getMyShipments();
       setShipments(Array.isArray(data) ? data : data?.content || []);
     } catch (err) {
-      console.error('Failed to fetch shipments', err);
+      if (!silent) console.error('Failed to fetch shipments', err);
     } finally {
       setLoading(false);
     }
@@ -67,7 +69,7 @@ export default function ShipmentsPage() {
             Real-time intermodal tracking, container telematics, and port departures.
           </p>
         </div>
-        <Button variant="outline" onClick={fetchShipments} size="sm">
+        <Button variant="outline" onClick={() => fetchShipments(false)} size="sm">
           Refresh Shipments
         </Button>
       </div>
@@ -116,9 +118,9 @@ export default function ShipmentsPage() {
                     <span>ETA: {s.expectedDelivery ? new Date(s.expectedDelivery).toLocaleDateString() : 'Pending confirmation'}</span>
                   </div>
                   {s.orderId && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="text-xs font-semibold text-primary hover:text-secondary gap-1 p-0 h-auto"
                       onClick={() => navigate(`/buyer/orders/${s.orderId}`)}
                     >
@@ -138,8 +140,8 @@ export default function ShipmentsPage() {
             <p className="text-muted-foreground text-sm mt-2 max-w-md">
               Once your accepted quotation transitions into a confirmed export order and container loading starts, full telematics and tracking will be visible here.
             </p>
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               className="mt-6 bg-primary hover:bg-secondary text-primary-foreground"
               onClick={() => navigate('/buyer/quotations')}
             >

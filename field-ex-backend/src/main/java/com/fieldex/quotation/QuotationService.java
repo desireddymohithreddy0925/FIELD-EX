@@ -1,5 +1,6 @@
 package com.fieldex.quotation;
 
+import com.fieldex.audit.AuditLogService;
 import com.fieldex.buyer.Buyer;
 import com.fieldex.buyer.BuyerRepository;
 import com.fieldex.fruit.Fruit;
@@ -17,6 +18,7 @@ import com.fieldex.user.User;
 import com.fieldex.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -42,6 +44,9 @@ public class QuotationService {
     private final UserRepository userRepository;
     private final EventPublisher eventPublisher;
 
+    @Autowired(required = false)
+    private AuditLogService auditLogService;
+
     @Transactional
     public QuotationDto requestQuotation(QuotationRequest request) {
         User currentUser = getCurrentUser();
@@ -53,6 +58,10 @@ public class QuotationService {
                 .status(QuotationStatus.REQUESTED)
                 .build();
 
+        BigDecimal estimatedTotal = BigDecimal.ZERO;
+        String defaultCurrency = "USD";
+        boolean hasSeededPrices = false;
+
         for (QuotationItemRequest itemReq : request.getItems()) {
             Fruit fruit = fruitRepository.findById(itemReq.getFruitId())
                     .orElseThrow(() -> new EntityNotFoundException("Fruit not found"));
@@ -63,17 +72,57 @@ public class QuotationService {
                 throw new IllegalArgumentException("Variety does not belong to the specified fruit");
             }
 
+            BigDecimal fixedUnitPrice = variety.getPricePerKg();
+            BigDecimal lineTotal = fixedUnitPrice != null ? fixedUnitPrice.multiply(itemReq.getQuantity()) : null;
+            if (lineTotal != null) {
+                hasSeededPrices = true;
+                estimatedTotal = estimatedTotal.add(lineTotal);
+                if (variety.getCurrency() != null) {
+                    defaultCurrency = variety.getCurrency();
+                }
+            }
+
             QuotationItem item = QuotationItem.builder()
                     .fruit(fruit)
                     .variety(variety)
                     .quantity(itemReq.getQuantity())
+                    .unitPrice(fixedUnitPrice)
+                    .lineTotal(lineTotal)
                     .build();
             quotation.addItem(item);
         }
 
+        if (hasSeededPrices) {
+            quotation.setCurrencyCode(defaultCurrency);
+            quotation.setTotalAmount(estimatedTotal);
+        }
+
         quotation = quotationRepository.save(quotation);
         recordHistory(quotation, QuotationStatus.REQUESTED, currentUser, "Quotation requested by buyer");
+        if (auditLogService != null) {
+            try {
+                auditLogService.logEvent("QUOTATION_REQUESTED", "QUOTATION", quotation.getId().toString(),
+                        "Buyer " + buyer.getCompanyName() + " requested quote for " + quotation.getItems().size() + " variety item(s)");
+            } catch (Exception ignored) {
+            }
+        }
 
+        return mapToDto(quotation);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<QuotationDto> getAllQuotations(QuotationStatus status, Pageable pageable) {
+        Specification<Quotation> spec = Specification.where((root, query, cb) -> cb.isTrue(root.get("active")));
+        if (status != null) {
+            spec = spec.and(QuotationSpecification.hasStatus(status));
+        }
+        return quotationRepository.findAll(spec, pageable).map(this::mapToDto);
+    }
+
+    @Transactional(readOnly = true)
+    public QuotationDto getQuotationById(UUID id) {
+        Quotation quotation = quotationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Quotation not found"));
         return mapToDto(quotation);
     }
 
@@ -102,8 +151,8 @@ public class QuotationService {
         Quotation quotation = quotationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Quotation not found"));
 
-        if (quotation.getStatus() != QuotationStatus.REQUESTED) {
-            throw new IllegalStateException("Only REQUESTED quotations can be updated and sent");
+        if (quotation.getStatus() != QuotationStatus.REQUESTED && quotation.getStatus() != QuotationStatus.SENT) {
+            throw new IllegalStateException("Only REQUESTED or SENT quotations can be updated and sent");
         }
 
         quotation.setCurrencyCode(update.getCurrencyCode());
@@ -148,7 +197,14 @@ public class QuotationService {
         quotation.setStatus(QuotationStatus.SENT);
 
         quotation = quotationRepository.save(quotation);
-        recordHistory(quotation, QuotationStatus.SENT, getCurrentUser(), "Quotation priced and sent to buyer");
+        recordHistory(quotation, QuotationStatus.SENT, getCurrentUser(), "Present amount set & quotation sent to buyer");
+        if (auditLogService != null) {
+            try {
+                auditLogService.logEvent("QUOTATION_PRICED", "QUOTATION", quotation.getId().toString(),
+                        String.format("Present amount set to %s %s and sent to %s", quotation.getCurrencyCode(), total, quotation.getBuyer().getCompanyName()));
+            } catch (Exception ignored) {
+            }
+        }
 
         return mapToDto(quotation);
     }
@@ -241,6 +297,8 @@ public class QuotationService {
         return QuotationDto.builder()
                 .id(quotation.getId())
                 .buyerId(quotation.getBuyer().getId())
+                .buyerCompanyName(quotation.getBuyer().getCompanyName())
+                .buyerEmail(quotation.getBuyer().getContactEmail())
                 .status(quotation.getStatus())
                 .currencyCode(quotation.getCurrencyCode())
                 .packagingCost(quotation.getPackagingCost())

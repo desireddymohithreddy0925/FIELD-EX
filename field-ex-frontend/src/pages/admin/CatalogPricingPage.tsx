@@ -36,6 +36,8 @@ interface Fruit {
 export default function CatalogPricingPage() {
   const [fruits, setFruits] = useState<Fruit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,10 +47,11 @@ export default function CatalogPricingPage() {
   const [pricingForm, setPricingForm] = useState<PricingUpdatePayload>({
     pricePerKg: 0,
     currency: 'USD',
-    availableQuantity: 100,
-    minOrderQuantity: 1,
-    unit: 'MT'
+    availableQuantity: 10000,
+    minOrderQuantity: 500,
+    unit: 'KG'
   });
+  const [previewSampleQtyKg, setPreviewSampleQtyKg] = useState<number>(1000);
   const [isSubmittingPricing, setIsSubmittingPricing] = useState(false);
 
   // Variety Specs Modal State
@@ -81,18 +84,21 @@ export default function CatalogPricingPage() {
     description: '',
     pricePerKg: 3.50,
     currency: 'USD',
-    availableQuantity: 100,
-    minOrderQuantity: 1,
+    availableQuantity: 10000,
+    minOrderQuantity: 500,
+    unit: 'KG',
   });
   const [isSubmittingVariety, setIsSubmittingVariety] = useState(false);
 
-  const fetchCatalog = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
+  const toKgMultiplier = (unit?: string) => (unit === 'MT' ? 1000 : 1);
+
+  const fetchCatalog = async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    setIsSyncing(true);
+    if (!silent) setErrorMessage(null);
     try {
       const res = await buyerApi.getFruits({ page: 0, size: 50 });
       const fruitList = res.content || [];
-      // Fetch full details with varieties for each fruit
       const fullFruits = await Promise.all(
         fruitList.map(async (f: any) => {
           try {
@@ -103,32 +109,48 @@ export default function CatalogPricingPage() {
         })
       );
       setFruits(fullFruits);
+      setLastSynced(new Date());
     } catch (err: any) {
-      if (!err.response) {
-        setErrorMessage('Cannot connect to backend server. Please ensure Spring Boot is running on port 8080.');
-      } else if (err.response.status === 401 || err.response.status === 403) {
-        setErrorMessage('Session expired. Please log out and sign in again as Administrator.');
-      } else {
-        setErrorMessage(err.response?.data?.message || 'Failed to load fruits catalog.');
+      if (!silent) {
+        if (!err.response) {
+          setErrorMessage('Cannot connect to backend server. Please ensure Spring Boot is running on port 8080.');
+        } else if (err.response.status === 401 || err.response.status === 403) {
+          setErrorMessage('Session expired. Please log out and sign in again as Administrator.');
+        } else {
+          setErrorMessage(err.response?.data?.message || 'Failed to load fruits catalog.');
+        }
       }
     } finally {
       setIsLoading(false);
+      setIsSyncing(false);
     }
   };
 
   useEffect(() => {
-    fetchCatalog();
+    fetchCatalog(false);
   }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!priceModalVariety && !specsModalVariety && !isNewFruitModalOpen && !newVarietyFruitId) {
+        fetchCatalog(true);
+      }
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [priceModalVariety, specsModalVariety, isNewFruitModalOpen, newVarietyFruitId]);
 
   const openPricingModal = (fruit: Fruit, variety: FruitVariety) => {
     setPriceModalVariety({ fruit, variety });
+    const unit = variety.unit ?? 'KG';
+    const minQty = variety.minOrderQuantity ?? 500;
     setPricingForm({
       pricePerKg: variety.pricePerKg ?? 3.50,
       currency: variety.currency ?? 'USD',
-      availableQuantity: variety.availableQuantity ?? 100,
-      minOrderQuantity: variety.minOrderQuantity ?? 1,
-      unit: variety.unit ?? 'MT',
+      availableQuantity: variety.availableQuantity ?? 10000,
+      minOrderQuantity: minQty,
+      unit,
     });
+    setPreviewSampleQtyKg(Math.max(500, minQty * toKgMultiplier(unit)));
   };
 
   const handleSavePricing = async (e: React.FormEvent) => {
@@ -203,10 +225,10 @@ export default function CatalogPricingPage() {
       setNewVarietyFruitId(null);
       setNewVarietyForm({
         name: '', grade: 'Export Grade A', brixLevel: '18-20° Brix', description: '',
-        pricePerKg: 3.50, currency: 'USD', availableQuantity: 100, minOrderQuantity: 1
+        pricePerKg: 3.50, currency: 'USD', availableQuantity: 10000, minOrderQuantity: 500, unit: 'KG'
       });
       setSuccessMessage('New cultivar variety registered with live pricing!');
-      await fetchCatalog();
+      await fetchCatalog(true);
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
       setErrorMessage(err.response?.data?.message || 'Failed to add variety.');
@@ -225,19 +247,25 @@ export default function CatalogPricingPage() {
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-card border border-border shadow-soft">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent text-[11px] font-semibold text-primary mb-2">
-            <Globe className="w-3.5 h-3.5 text-tertiary" />
-            <span>Commercial Produce Governance</span>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent text-[11px] font-semibold text-primary">
+              <Globe className="w-3.5 h-3.5 text-tertiary" />
+              <span>Commercial Produce Governance</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 text-[11px] font-semibold border border-emerald-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Real-Time Live Feed</span>
+            </div>
           </div>
           <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-foreground">Catalog, Fruits & Price Fixing</h2>
           <p className="text-muted-foreground text-sm mt-0.5">
-            Admin & Operations Manager console: fix cultivar prices, configure available metric tonnage, quality grades, and Brix ratings.
+            Admin & Operations Manager console: fix cultivar prices, configure available quantities, calculate present amounts, and edit grades. (Synced {lastSynced.toLocaleTimeString()})
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={fetchCatalog} disabled={isLoading} className="gap-2">
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={() => fetchCatalog(false)} disabled={isLoading || isSyncing} className="gap-2">
+            <RefreshCw className={`w-3.5 h-3.5 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button size="sm" onClick={() => setIsNewFruitModalOpen(true)} className="gap-2 font-semibold">
@@ -337,6 +365,7 @@ export default function CatalogPricingPage() {
                         <th className="py-3 px-6">Brix Sweetness</th>
                         <th className="py-3 px-6">Fixed Price</th>
                         <th className="py-3 px-6">Available Stock</th>
+                        <th className="py-3 px-6">Present Stock Amount</th>
                         <th className="py-3 px-6">Min Order</th>
                         <th className="py-3 px-6 text-right">Commercial Actions</th>
                       </tr>
@@ -344,12 +373,18 @@ export default function CatalogPricingPage() {
                     <tbody className="divide-y divide-border/60">
                       {(!fruit.varieties || fruit.varieties.length === 0) ? (
                         <tr>
-                          <td colSpan={7} className="py-6 px-6 text-center text-muted-foreground">
+                          <td colSpan={8} className="py-6 px-6 text-center text-muted-foreground">
                             No varieties registered for {fruit.name}. Click "+ Add Variety" to create one.
                           </td>
                         </tr>
                       ) : (
-                        fruit.varieties.map((variety) => (
+                        fruit.varieties.map((variety) => {
+                          const unitPrice = Number(variety.pricePerKg ?? 3.50);
+                          const availQty = Number(variety.availableQuantity ?? 10000);
+                          const availKg = availQty * toKgMultiplier(variety.unit || 'KG');
+                          const presentStockAmount = unitPrice * availKg;
+
+                          return (
                           <tr key={variety.id} className="hover:bg-muted/10 transition-colors">
                             <td className="py-3.5 px-6 font-semibold text-foreground text-sm">
                               {variety.name}
@@ -369,13 +404,16 @@ export default function CatalogPricingPage() {
                               </span>
                             </td>
                             <td className="py-3.5 px-6 font-mono font-bold text-foreground text-sm">
-                              {variety.currency || 'USD'} ${Number(variety.pricePerKg ?? 3.50).toFixed(2)} / kg
+                              {variety.currency || 'USD'} ${unitPrice.toFixed(2)} / kg
                             </td>
                             <td className="py-3.5 px-6 font-medium text-foreground">
-                              {variety.availableQuantity ?? 100} {variety.unit || 'MT'}
+                              {availQty.toLocaleString()} {variety.unit || 'KG'}
+                            </td>
+                            <td className="py-3.5 px-6 font-mono font-bold text-primary text-sm">
+                              {variety.currency || 'USD'} ${presentStockAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
                             <td className="py-3.5 px-6 text-muted-foreground">
-                              {variety.minOrderQuantity ?? 1} {variety.unit || 'MT'}
+                              {(variety.minOrderQuantity ?? 500).toLocaleString()} {variety.unit || 'KG'}
                             </td>
                             <td className="py-3.5 px-6 text-right">
                               <div className="inline-flex items-center gap-2">
@@ -399,7 +437,8 @@ export default function CatalogPricingPage() {
                               </div>
                             </td>
                           </tr>
-                        ))
+                        );
+                        })
                       )}
                     </tbody>
                   </table>
@@ -498,6 +537,35 @@ export default function CatalogPricingPage() {
                   onChange={(e) => setPricingForm({ ...pricingForm, minOrderQuantity: parseFloat(e.target.value) || 0 })}
                   className="text-sm"
                 />
+              </div>
+
+              {/* Live Present Amount Preview Box */}
+              <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-primary">Present Amount Calculator</span>
+                  <span className="font-mono font-bold text-foreground">
+                    Total Lot Value: {pricingForm.currency} ${(pricingForm.pricePerKg * pricingForm.availableQuantity * toKgMultiplier(pricingForm.unit)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-primary/15">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Quantity (kg):</span>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="50"
+                      value={previewSampleQtyKg}
+                      onChange={(e) => setPreviewSampleQtyKg(parseFloat(e.target.value) || 0)}
+                      className="h-7 w-24 text-xs font-mono"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <span className="text-muted-foreground mr-1">Present Amount:</span>
+                    <span className="font-mono font-bold text-sm text-primary">
+                      {pricingForm.currency} ${(pricingForm.pricePerKg * previewSampleQtyKg).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-3">
@@ -718,7 +786,7 @@ export default function CatalogPricingPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Available Quantity (MT)</label>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Available Quantity</label>
                   <Input 
                     type="number"
                     step="0.1"
@@ -727,6 +795,31 @@ export default function CatalogPricingPage() {
                     onChange={(e) => setNewVarietyForm({ ...newVarietyForm, availableQuantity: parseFloat(e.target.value) || 0 })}
                     className="text-sm"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Min Order Qty (MOQ)</label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    required
+                    value={newVarietyForm.minOrderQuantity}
+                    onChange={(e) => setNewVarietyForm({ ...newVarietyForm, minOrderQuantity: parseFloat(e.target.value) || 0 })}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Unit</label>
+                  <select
+                    value={newVarietyForm.unit}
+                    onChange={(e) => setNewVarietyForm({ ...newVarietyForm, unit: e.target.value })}
+                    className="w-full text-sm bg-background border border-border rounded-md px-3 py-2 font-medium"
+                  >
+                    <option value="KG">Kilogram (KG)</option>
+                    <option value="MT">Metric Ton (MT)</option>
+                  </select>
                 </div>
               </div>
 

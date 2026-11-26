@@ -22,6 +22,7 @@ const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
 const CatalogPricingPage = lazy(() => import('./pages/admin/CatalogPricingPage'))
 const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage'))
 const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'))
+const AdminQuotationsPage = lazy(() => import('./pages/admin/AdminQuotationsPage'))
 const QcDashboard = lazy(() => import('./pages/qc/QcDashboard'))
 const LogisticsDashboard = lazy(() => import('./pages/logistics/LogisticsDashboard'))
 const ManagerDashboard = lazy(() => import('./pages/manager/ManagerDashboard'))
@@ -83,6 +84,7 @@ function App() {
                   <Route path="inventory" element={<PlaceholderPage name="Inventory" />} />
                   <Route path="cold-chain" element={<PlaceholderPage name="Cold Chain" />} />
                   <Route path="orders" element={<AdminOrdersPage />} />
+                  <Route path="quotations" element={<AdminQuotationsPage />} />
                   <Route path="packaging" element={<PlaceholderPage name="Packaging" />} />
                   <Route path="documents" element={<PlaceholderPage name="Documents" />} />
                   <Route path="shipments" element={<PlaceholderPage name="Shipments" />} />
@@ -144,7 +146,7 @@ function App() {
                   <Route path="catalog" element={<CatalogPricingPage />} />
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="orders" element={<AdminOrdersPage />} />
-                  <Route path="quotations" element={<PlaceholderPage name="Manager Quotations" />} />
+                  <Route path="quotations" element={<AdminQuotationsPage />} />
                   <Route path="procurement" element={<PlaceholderPage name="Procurement Batches" />} />
                   <Route path="inventory" element={<PlaceholderPage name="Inventory Control" />} />
                   <Route path="qc" element={<PlaceholderPage name="QC Sign-Off" />} />

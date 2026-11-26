@@ -70,13 +70,15 @@ export default function OrderDetailsPage() {
   };
 
   useEffect(() => {
-    fetchOrderDetails();
+    fetchOrderDetails(false);
+    const timer = setInterval(() => fetchOrderDetails(true), 4000);
+    return () => clearInterval(timer);
   }, [id]);
 
-  const fetchOrderDetails = async () => {
+  const fetchOrderDetails = async (silent = false) => {
     try {
       if (!id) return;
-      setLoading(true);
+      if (!silent) setLoading(true);
       const orderData = await buyerApi.getOrderDetails(id);
       setOrder(orderData);
 
@@ -96,8 +98,10 @@ export default function OrderDetailsPage() {
         // Shipment not created yet
       }
     } catch (err) {
-      console.error(err);
-      alert('Failed to load order details');
+      if (!silent) {
+        console.error(err);
+        alert('Failed to load order details');
+      }
     } finally {
       setLoading(false);
     }

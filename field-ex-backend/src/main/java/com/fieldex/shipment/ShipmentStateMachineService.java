@@ -62,6 +62,26 @@ public class ShipmentStateMachineService {
     }
 
     @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<com.fieldex.buyer.dto.BuyerShipmentDto> getAllShipmentDtos(com.fieldex.shipment.dto.ShipmentFilter filter, org.springframework.data.domain.Pageable pageable) {
+        return getAllShipments(filter, pageable).map(s -> com.fieldex.buyer.dto.BuyerShipmentDto.builder()
+                .id(s.getId())
+                .orderId(s.getOrder() != null ? s.getOrder().getId() : null)
+                .orderNumber(s.getOrder() != null ? s.getOrder().getOrderNumber() : null)
+                .status(s.getStatus())
+                .containerNumber(s.getContainerNumber())
+                .shippingCompany(s.getShippingCompany())
+                .trackingNumber(s.getTrackingNumber())
+                .originPort(s.getOriginPort())
+                .destinationPort(s.getDestinationPort())
+                .destinationCountry(s.getDestinationCountry())
+                .shipmentDate(s.getShipmentDate())
+                .expectedDelivery(s.getExpectedDelivery())
+                .actualDelivery(s.getActualDelivery())
+                .createdAt(s.getCreatedAt() != null ? s.getCreatedAt().atOffset(java.time.ZoneOffset.UTC) : null)
+                .build());
+    }
+
+    @Transactional(readOnly = true)
     public java.util.Optional<Shipment> getShipmentByOrderId(UUID orderId) {
         return shipmentRepository.findByOrderId(orderId);
     }

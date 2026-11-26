@@ -28,6 +28,7 @@ export default function AdminUsersPage() {
 
   const [users, setUsers] = useState<UserDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastSynced, setLastSynced] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('ALL');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -44,19 +45,22 @@ export default function AdminUsersPage() {
   });
   const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
 
-  const fetchUsers = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
+  const fetchUsers = async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    if (!silent) setErrorMessage(null);
     try {
       const data = await adminApi.getUsers();
       setUsers(data);
+      setLastSynced(new Date());
     } catch (err: any) {
-      if (!err.response) {
-        setErrorMessage('Cannot connect to backend server. Please ensure Spring Boot is running on port 8080 (./mvnw spring-boot:run).');
-      } else if (err.response.status === 401 || err.response.status === 403) {
-        setErrorMessage('Session expired or unauthorized. Please log out and sign in again as Administrator.');
-      } else {
-        setErrorMessage(err.response?.data?.message || 'Failed to load system users.');
+      if (!silent) {
+        if (!err.response) {
+          setErrorMessage('Cannot connect to backend server. Please ensure Spring Boot is running on port 8080 (./mvnw spring-boot:run).');
+        } else if (err.response.status === 401 || err.response.status === 403) {
+          setErrorMessage('Session expired or unauthorized. Please log out and sign in again as Administrator.');
+        } else {
+          setErrorMessage(err.response?.data?.message || 'Failed to load system users.');
+        }
       }
     } finally {
       setIsLoading(false);
@@ -64,8 +68,17 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(false);
   }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!isCreateModalOpen && !isUpdatingUserId) {
+        fetchUsers(true);
+      }
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [isCreateModalOpen, isUpdatingUserId]);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     setIsUpdatingUserId(userId);
@@ -140,7 +153,7 @@ export default function AdminUsersPage() {
           </div>
           <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-foreground">System Users & Role Assignment</h2>
           <p className="text-muted-foreground text-sm mt-0.5">
-            Every user role must be assigned by the Administrator. Self-assignment of staff permissions is strictly prohibited.
+            Every user role must be assigned by the Administrator. Self-assignment of staff permissions is strictly prohibited. (Synced {lastSynced.toLocaleTimeString()})
           </p>
         </div>
 
@@ -148,7 +161,7 @@ export default function AdminUsersPage() {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={fetchUsers} 
+            onClick={() => fetchUsers(false)} 
             disabled={isLoading}
             className="gap-2"
           >

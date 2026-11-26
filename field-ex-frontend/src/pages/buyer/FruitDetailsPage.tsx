@@ -17,12 +17,16 @@ export default function FruitDetailsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
+    if (!id) return;
+    const loadFruit = (silent = false) => {
       buyerApi.getFruitDetails(id)
         .then(data => setFruit(data))
-        .catch(err => console.error("Error fetching fruit:", err))
+        .catch(err => { if (!silent) console.error("Error fetching fruit:", err); })
         .finally(() => setLoading(false));
-    }
+    };
+    loadFruit(false);
+    const timer = setInterval(() => loadFruit(true), 4000);
+    return () => clearInterval(timer);
   }, [id]);
 
 
@@ -187,6 +191,34 @@ export default function FruitDetailsPage() {
                       >
                         <Send className="w-3 h-3" /> Quote Variety
                       </Button>
+                    </div>
+
+                    {/* Live Price & Stock Banner (Fixed by Admin / Manager) */}
+                    <div className="mt-4 grid grid-cols-3 gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 text-xs">
+                      <div>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                          Present Fixed Price
+                        </span>
+                        <span className="font-mono font-bold text-base text-primary">
+                          {v.currency || 'USD'} ${Number(v.pricePerKg ?? 0).toFixed(2)} <span className="text-xs font-normal text-muted-foreground">/ kg</span>
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                          Available Stock
+                        </span>
+                        <span className="font-mono font-semibold text-sm text-foreground">
+                          {Number(v.availableQuantity ?? 0).toLocaleString()} {v.unit || 'KG'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                          Minimum Order (MOQ)
+                        </span>
+                        <span className="font-mono font-semibold text-sm text-foreground">
+                          {Number(v.minOrderQuantity ?? 500).toLocaleString()} {v.unit || 'KG'}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Spec Grid */}

@@ -15,6 +15,8 @@ import java.util.UUID;
 public class QuotationDto {
     private UUID id;
     private UUID buyerId;
+    private String buyerCompanyName;
+    private String buyerEmail;
     private QuotationStatus status;
     private String currencyCode;
     

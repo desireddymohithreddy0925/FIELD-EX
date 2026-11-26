@@ -60,6 +60,20 @@ export interface AuditLogDto {
   timestamp: string;
 }
 
+export interface AdminQuotationUpdatePayload {
+  currencyCode: string;
+  packagingCost: number;
+  transportationCost: number;
+  exportHandlingCost: number;
+  shippingCost: number;
+  insuranceCost: number;
+  discount: number;
+  taxAmount: number;
+  paymentTerms: string;
+  validityDate: string;
+  itemPrices: Record<string, number>;
+}
+
 export const adminApi = {
   getUsers: async (): Promise<UserDto[]> => {
     const res = await api.get<UserDto[]>('/v1/admin/users');
@@ -138,6 +152,19 @@ export const adminApi = {
     const res = await api.post(`/v1/admin/orders/${orderId}/reject`, null, {
       params: { notes },
     });
+    return res.data;
+  },
+
+  // Admin & Manager Quotations Pricing & Management
+  getAllQuotations: async (status?: string): Promise<any> => {
+    const res = await api.get('/v1/admin/quotations', {
+      params: status && status !== 'ALL' ? { status, size: 100 } : { size: 100 },
+    });
+    return res.data;
+  },
+
+  updateAndSendQuotation: async (id: string, payload: AdminQuotationUpdatePayload): Promise<any> => {
+    const res = await api.put(`/v1/admin/quotations/${id}/send`, payload);
     return res.data;
   },
 

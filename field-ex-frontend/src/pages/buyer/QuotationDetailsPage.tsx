@@ -15,17 +15,21 @@ export default function QuotationDetailsPage() {
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    fetchQuotation();
+    fetchQuotation(false);
+    const timer = setInterval(() => fetchQuotation(true), 4000);
+    return () => clearInterval(timer);
   }, [id]);
 
-  const fetchQuotation = async () => {
+  const fetchQuotation = async (silent = false) => {
     try {
       if (!id) return;
       const data = await buyerApi.getQuotationDetails(id);
       setQuotation(data);
     } catch (err) {
-      console.error(err);
-      alert('Failed to load quotation details');
+      if (!silent) {
+        console.error(err);
+        alert('Failed to load quotation details');
+      }
     } finally {
       setLoading(false);
     }

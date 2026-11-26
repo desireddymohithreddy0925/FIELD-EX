@@ -12,21 +12,23 @@ export default function CustomsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCustomsData();
+    fetchCustomsData(false);
+    const timer = setInterval(() => fetchCustomsData(true), 4000);
+    return () => clearInterval(timer);
   }, []);
 
-  const fetchCustomsData = async () => {
+  const fetchCustomsData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const shipments = await buyerApi.getMyShipments();
       const list = Array.isArray(shipments) ? shipments : [];
       // Filter shipments that are in customs or recently cleared
-      const filtered = list.filter((s: any) => 
+      const filtered = list.filter((s: any) =>
         s.status === 'CUSTOMS' || s.status === 'IN_TRANSIT' || s.status === 'DELIVERED'
       );
       setCustomsShipments(filtered);
     } catch (err) {
-      console.error('Failed to load customs data', err);
+      if (!silent) console.error('Failed to load customs data', err);
     } finally {
       setLoading(false);
     }
@@ -54,7 +56,7 @@ export default function CustomsPage() {
             Single-window international trade compliance, phytosanitary clearance, and duty manifests.
           </p>
         </div>
-        <Button variant="outline" onClick={fetchCustomsData} size="sm">
+        <Button variant="outline" onClick={() => fetchCustomsData(false)} size="sm">
           Refresh Customs
         </Button>
       </div>
@@ -101,9 +103,9 @@ export default function CustomsPage() {
 
                 {s.orderId && (
                   <div className="pt-2 flex justify-end">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="text-xs font-semibold text-primary hover:text-secondary gap-1 p-0 h-auto"
                       onClick={() => navigate(`/buyer/orders/${s.orderId}`)}
                     >
@@ -123,8 +125,8 @@ export default function CustomsPage() {
             <p className="text-muted-foreground text-sm mt-2 max-w-md">
               Any required import documentation, duty verification, or phytosanitary releases for shipments in transit will appear here automatically.
             </p>
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               className="mt-6 bg-primary hover:bg-secondary text-primary-foreground"
               onClick={() => navigate('/buyer/orders')}
             >

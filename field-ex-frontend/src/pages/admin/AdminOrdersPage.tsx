@@ -9,22 +9,24 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { adminApi, type OrderStatusHistoryDto } from '../../services/adminApi';
 
-const ORDER_STATUS_ORDER = [
-  'QUOTE_ACCEPTED',
-  'PAYMENT_PENDING',
-  'PAID',
-  'PROCESSING',
-  'PACKED',
-  'DISPATCHED',
-  'IN_TRANSIT',
-  'CUSTOMS',
-  'DELIVERED',
-  'CANCELLED'
-];
+const NEXT_ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  QUOTE_ACCEPTED: ['PROCESSING', 'PAYMENT_PENDING', 'CANCELLED'],
+  PAYMENT_PENDING: ['PAID', 'PROCESSING', 'CANCELLED'],
+  PAID: ['PROCESSING', 'CANCELLED'],
+  PROCESSING: ['PACKED', 'CANCELLED'],
+  PACKED: ['DISPATCHED'],
+  DISPATCHED: ['IN_TRANSIT'],
+  IN_TRANSIT: ['CUSTOMS', 'DELIVERED'],
+  CUSTOMS: ['DELIVERED'],
+  DELIVERED: [],
+  CANCELLED: [],
+};
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   
@@ -48,27 +50,41 @@ export default function AdminOrdersPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const fetchOrders = async () => {
-    setIsLoading(true);
+  const fetchOrders = async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    setIsSyncing(true);
     try {
       const data = await adminApi.getAllOrders();
       setOrders(Array.isArray(data) ? data : (data?.content || []));
+      setLastSynced(new Date());
     } catch (err: any) {
-      if (!err.response) {
-        setErrorMessage('Cannot connect to backend server. Please ensure Spring Boot is running on port 8080.');
-      } else if (err.response.status === 401 || err.response.status === 403) {
-        setErrorMessage('Session expired. Please log out and sign in again as Administrator.');
-      } else {
-        setErrorMessage(err.response?.data?.message || 'Failed to load orders.');
+      if (!silent) {
+        if (!err.response) {
+          setErrorMessage('Cannot connect to backend server. Please ensure Spring Boot is running on port 8080.');
+        } else if (err.response.status === 401 || err.response.status === 403) {
+          setErrorMessage('Session expired. Please log out and sign in again as Administrator.');
+        } else {
+          setErrorMessage(err.response?.data?.message || 'Failed to load orders.');
+        }
       }
     } finally {
       setIsLoading(false);
+      setIsSyncing(false);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(false);
   }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!transitionOrder && !acceptanceModalOrder && !historyOrder) {
+        fetchOrders(true);
+      }
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [transitionOrder, acceptanceModalOrder, historyOrder]);
 
   const openHistoryModal = async (order: any) => {
     setHistoryOrder(order);
@@ -156,19 +172,25 @@ export default function AdminOrdersPage() {
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-card border border-border shadow-soft">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent text-[11px] font-semibold text-primary mb-2">
-            <History className="w-3.5 h-3.5 text-tertiary" />
-            <span>Executive Governance</span>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent text-[11px] font-semibold text-primary">
+              <History className="w-3.5 h-3.5 text-tertiary" />
+              <span>Executive Governance</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 text-[11px] font-semibold border border-emerald-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Real-Time Live Feed</span>
+            </div>
           </div>
           <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-foreground">Orders & Lifecycle Audit History</h2>
           <p className="text-muted-foreground text-sm mt-0.5">
-            Admin & Manager privileged console: view full chronological audit history of order states, transition actors, and notes.
+            Admin & Manager privileged console: manage order approvals, valid state transitions, and immutable audit history. (Synced {lastSynced.toLocaleTimeString()})
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={fetchOrders} disabled={isLoading} className="gap-2">
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={() => fetchOrders(false)} disabled={isLoading || isSyncing} className="gap-2">
+            <RefreshCw className={`w-3.5 h-3.5 ${(isLoading || isSyncing) ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -212,7 +234,7 @@ export default function AdminOrdersPage() {
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1">
-          {['ALL', 'QUOTE_ACCEPTED', 'PAID', 'PROCESSING', 'PACKED', 'DISPATCHED', 'CUSTOMS', 'DELIVERED'].map(st => (
+          {['ALL', 'QUOTE_ACCEPTED', 'PAID', 'PROCESSING', 'PACKED', 'DISPATCHED', 'IN_TRANSIT', 'CUSTOMS', 'DELIVERED', 'CANCELLED'].map(st => (
             <button
               key={st}
               onClick={() => setSelectedStatusFilter(st)}
@@ -222,7 +244,7 @@ export default function AdminOrdersPage() {
                   : 'bg-muted/60 text-muted-foreground hover:text-foreground'
               }`}
             >
-              {st.replace('_', ' ')}
+              {st === 'QUOTE_ACCEPTED' ? 'AWAITING ACCEPTANCE' : st.replace('_', ' ')}
             </button>
           ))}
         </div>
@@ -279,7 +301,17 @@ export default function AdminOrdersPage() {
                       </td>
 
                       <td className="py-4 px-6 text-muted-foreground">
-                        {order.items?.length || 0} cultivar line(s)
+                        {order.items?.length > 0 ? (
+                          <div className="space-y-0.5">
+                            {order.items.map((it: any, i: number) => (
+                              <div key={it.id || i} className="text-[11px]">
+                                <span className="font-semibold text-foreground">{it.fruitName}</span> ({it.varietyName}) × {Number(it.quantity).toLocaleString()} kg
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span>0 cultivar line(s)</span>
+                        )}
                       </td>
 
                       <td className="py-4 px-6 text-muted-foreground">
@@ -326,17 +358,23 @@ export default function AdminOrdersPage() {
                                 Reject
                               </Button>
                             </>
-                          ) : (
+                          ) : (NEXT_ALLOWED_TRANSITIONS[order.status] || []).length > 0 ? (
                             <Button
                               size="sm"
                               onClick={() => {
+                                const allowed = NEXT_ALLOWED_TRANSITIONS[order.status] || [];
                                 setTransitionOrder(order);
-                                setTargetStatus('PROCESSING');
+                                setTargetStatus(allowed[0]);
+                                setTransitionNotes(`Transitioned from ${order.status} to ${allowed[0]}`);
                               }}
                               className="h-8 text-xs px-2.5 gap-1 font-semibold"
                             >
-                              Transition
+                              Transition → {(NEXT_ALLOWED_TRANSITIONS[order.status] || [])[0]}
                             </Button>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                              {order.status === 'DELIVERED' ? 'Fulfilled' : 'Closed'}
+                            </Badge>
                           )}
                         </div>
                       </td>
@@ -440,14 +478,21 @@ export default function AdminOrdersPage() {
             </div>
 
             <form onSubmit={handleExecuteTransition} className="p-6 space-y-4">
+              <div className="p-3 rounded-lg bg-muted/40 border border-border flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Current Status:</span>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${getStatusBadge(transitionOrder.status)}`}>
+                  {transitionOrder.status}
+                </span>
+              </div>
+
               <div>
-                <label className="text-xs font-semibold text-muted-foreground block mb-1">Target Status</label>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">Allowed Next Status</label>
                 <select
                   value={targetStatus}
                   onChange={(e) => setTargetStatus(e.target.value)}
                   className="w-full text-sm bg-background border border-border rounded-md px-3 py-2 font-medium"
                 >
-                  {ORDER_STATUS_ORDER.map(st => (
+                  {(NEXT_ALLOWED_TRANSITIONS[transitionOrder.status] || []).map(st => (
                     <option key={st} value={st}>{st}</option>
                   ))}
                 </select>

@@ -27,11 +27,12 @@ export default function QcDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  const pendingCount = inspections.filter(i => i.status === 'PENDING_INSPECTION' || i.status === 'IN_PROGRESS').length;
-  const passedCount = inspections.filter(i => i.status === 'PASSED' || i.status === 'APPROVED').length;
-  const failedCount = inspections.filter(i => i.status === 'FAILED' || i.status === 'REJECTED').length;
+  const pendingCount = inspections.filter(i => i.status === 'PENDING' || i.status === 'REQUIRES_REINSPECTION').length;
+  const passedCount = inspections.filter(i => i.status === 'PASSED' || i.status === 'PARTIALLY_PASSED').length;
+  const failedCount = inspections.filter(i => i.status === 'FAILED').length;
   const totalCount = inspections.length;
-  const passRate = totalCount > 0 ? ((passedCount / totalCount) * 100).toFixed(1) : '98.5';
+  const evaluatedCount = passedCount + failedCount;
+  const passRate = evaluatedCount > 0 ? ((passedCount / evaluatedCount) * 100).toFixed(1) : '100.0';
 
   const qcData = [
     { name: 'Mon', passed: 120, failed: 12 },
@@ -141,48 +142,42 @@ export default function QcDashboard() {
 
         <Card className="lg:col-span-1 border-border/50 shadow-sm flex flex-col">
           <CardHeader>
-            <CardTitle>Recent Reports</CardTitle>
+            <CardTitle>Live Inspection Reports ({inspections.length})</CardTitle>
           </CardHeader>
           <CardContent className="flex-1">
-            <div className="space-y-6">
-               <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-green-100 text-green-700 rounded-lg dark:bg-green-900/40 dark:text-green-400">
-                     <CheckCircle className="w-5 h-5" />
-                   </div>
-                   <div>
-                     <p className="font-medium text-sm">Batch #B-8291</p>
-                     <p className="text-xs text-muted-foreground">Grade A • Export Quality</p>
-                   </div>
-                 </div>
-                 <span className="text-xs text-muted-foreground">2 mins ago</span>
-               </div>
-               
-               <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-red-100 text-red-700 rounded-lg dark:bg-red-900/40 dark:text-red-400">
-                     <AlertTriangle className="w-5 h-5" />
-                   </div>
-                   <div>
-                     <p className="font-medium text-sm">Batch #B-8290</p>
-                     <p className="text-xs text-muted-foreground">Failed • Brix Level Low</p>
-                   </div>
-                 </div>
-                 <span className="text-xs text-muted-foreground">15 mins ago</span>
-               </div>
-
-               <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-green-100 text-green-700 rounded-lg dark:bg-green-900/40 dark:text-green-400">
-                     <CheckCircle className="w-5 h-5" />
-                   </div>
-                   <div>
-                     <p className="font-medium text-sm">Batch #B-8289</p>
-                     <p className="text-xs text-muted-foreground">Grade B • Domestic</p>
-                   </div>
-                 </div>
-                 <span className="text-xs text-muted-foreground">1 hr ago</span>
-               </div>
+            <div className="space-y-4">
+              {inspections.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">No live inspections queued yet.</p>
+              ) : (
+                inspections.slice(0, 5).map((insp: any) => {
+                  const isFailed = insp.status === 'FAILED';
+                  const isPending = insp.status === 'PENDING' || insp.status === 'REQUIRES_REINSPECTION';
+                  return (
+                    <div key={insp.id} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`p-2 rounded-lg shrink-0 ${
+                          isFailed
+                            ? 'bg-red-100 text-red-700'
+                            : isPending
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-green-100 text-green-700'
+                        }`}>
+                          {isFailed ? <AlertTriangle className="w-4 h-4" /> : isPending ? <ClipboardCheck className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{insp.inspectionNumber}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {insp.grade || 'GRADE_A'} • {insp.status} ({Number(insp.inspectedQuantity || 0).toLocaleString()} kg)
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-mono text-muted-foreground shrink-0">
+                        {insp.inspectionDate ? new Date(insp.inspectionDate).toLocaleDateString() : 'Live'}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </CardContent>
         </Card>

@@ -10,16 +10,18 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications(false);
+    const timer = setInterval(() => fetchNotifications(true), 4000);
+    return () => clearInterval(timer);
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await buyerApi.getMyNotifications();
       setNotifications(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to fetch notifications', err);
+      if (!silent) console.error('Failed to fetch notifications', err);
     } finally {
       setLoading(false);
     }
@@ -78,7 +80,7 @@ export default function NotificationsPage() {
             Real-time status updates on quotations, cold storage dispatch, customs, and deliveries.
           </p>
         </div>
-        <Button variant="outline" onClick={fetchNotifications} size="sm">
+        <Button variant="outline" onClick={() => fetchNotifications(false)} size="sm">
           Refresh
         </Button>
       </div>

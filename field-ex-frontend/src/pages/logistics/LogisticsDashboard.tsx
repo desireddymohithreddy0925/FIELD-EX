@@ -7,13 +7,18 @@ import { adminApi } from '../../services/adminApi';
 
 export default function LogisticsDashboard() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [shipments, setShipments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchLogisticsData = async () => {
     setIsLoading(true);
     try {
-      const data = await adminApi.getAllOrders();
-      setOrders(Array.isArray(data) ? data : (data?.content || []));
+      const [ordersData, shipmentsData] = await Promise.all([
+        adminApi.getAllOrders().catch(() => []),
+        adminApi.getShipments().catch(() => []),
+      ]);
+      setOrders(Array.isArray(ordersData) ? ordersData : (ordersData?.content || []));
+      setShipments(Array.isArray(shipmentsData) ? shipmentsData : (shipmentsData?.content || []));
     } catch {
       // Keep silent fallback
     } finally {
@@ -140,45 +145,52 @@ export default function LogisticsDashboard() {
 
         <Card className="lg:col-span-1 border-border/50 shadow-sm flex flex-col">
           <CardHeader>
-            <CardTitle>Urgent Issues</CardTitle>
+            <CardTitle>Live Vessel & Fleet Status</CardTitle>
           </CardHeader>
           <CardContent className="flex-1">
-            <div className="space-y-6">
-               <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-red-100 text-red-700 rounded-lg dark:bg-red-900/40 dark:text-red-400">
-                     <AlertCircle className="w-5 h-5" />
-                   </div>
-                   <div>
-                     <p className="font-medium text-sm">Shipment #SH-881</p>
-                     <p className="text-xs text-muted-foreground">Held at Port of Rotterdam</p>
-                   </div>
-                 </div>
-               </div>
-               
-               <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-red-100 text-red-700 rounded-lg dark:bg-red-900/40 dark:text-red-400">
-                     <AlertCircle className="w-5 h-5" />
-                   </div>
-                   <div>
-                     <p className="font-medium text-sm">Shipment #SH-872</p>
-                     <p className="text-xs text-muted-foreground">Missing phytosanitary cert</p>
-                   </div>
-                 </div>
-               </div>
-
-               <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-yellow-100 text-yellow-700 rounded-lg dark:bg-yellow-900/40 dark:text-yellow-400">
-                     <Clock className="w-5 h-5" />
-                   </div>
-                   <div>
-                     <p className="font-medium text-sm">Vessel Delayed</p>
-                     <p className="text-xs text-muted-foreground">ETA updated +48h (SH-860)</p>
-                   </div>
-                 </div>
-               </div>
+            <div className="space-y-4">
+              {shipments.length === 0 && orders.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">No active consignments in transit.</p>
+              ) : (
+                <>
+                  {shipments.slice(0, 4).map((sh: any) => (
+                    <div key={sh.id} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`p-2 rounded-lg shrink-0 ${
+                          sh.status === 'DELAYED'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {sh.status === 'DELAYED' ? <AlertCircle className="w-4 h-4" /> : <Ship className="w-4 h-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">
+                            {sh.orderNumber || 'Order'} • {sh.containerNumber || sh.trackingNumber}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {sh.shippingCompany || 'Reefer'} → {sh.destinationPort || 'Port'} ({sh.status})
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {orders.filter(o => o.status === 'PROCESSING').slice(0, 3).map((ord: any) => (
+                    <div key={ord.id} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 bg-amber-100 text-amber-700 rounded-lg shrink-0">
+                          <Clock className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{ord.orderNumber}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            Ready for packhouse sorting & reefer staging
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           </CardContent>
         </Card>

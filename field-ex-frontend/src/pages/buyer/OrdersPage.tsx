@@ -14,18 +14,20 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(false);
+    const timer = setInterval(() => fetchOrders(true), 4000);
+    return () => clearInterval(timer);
   }, [statusFilter]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const statusParam = statusFilter === 'ALL' ? undefined : statusFilter;
       const data = await buyerApi.getOrders(0, 50, statusParam);
       const orderList = Array.isArray(data) ? data : (data?.content || []);
       setOrders(orderList);
     } catch (err) {
-      console.error(err);
+      if (!silent) console.error(err);
     } finally {
       setLoading(false);
     }

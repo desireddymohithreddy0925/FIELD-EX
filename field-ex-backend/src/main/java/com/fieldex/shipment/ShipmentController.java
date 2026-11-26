@@ -20,10 +20,10 @@ public class ShipmentController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'LOGISTICS', 'MANAGER')")
     @Operation(summary = "Get all shipments with filtering and pagination")
-    public ResponseEntity<org.springframework.data.domain.Page<Shipment>> getAllShipments(
+    public ResponseEntity<org.springframework.data.domain.Page<com.fieldex.buyer.dto.BuyerShipmentDto>> getAllShipments(
             com.fieldex.shipment.dto.ShipmentFilter filter,
             @org.springframework.data.web.PageableDefault(size = 20) org.springframework.data.domain.Pageable pageable) {
-        return ResponseEntity.ok(shipmentService.getAllShipments(filter, pageable));
+        return ResponseEntity.ok(shipmentService.getAllShipmentDtos(filter, pageable));
     }
 
     @GetMapping("/orders/{orderId}")

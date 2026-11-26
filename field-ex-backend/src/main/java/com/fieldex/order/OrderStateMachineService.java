@@ -1,5 +1,8 @@
 package com.fieldex.order;
 
+import com.fieldex.audit.AuditLogService;
+import com.fieldex.fruit.FruitVariety;
+import com.fieldex.fruit.FruitVarietyRepository;
 import com.fieldex.inventory.InventoryService;
 import com.fieldex.inventory.dto.InventoryAllocationResult;
 import com.fieldex.common.event.EventPublisher;
@@ -11,6 +14,7 @@ import com.fieldex.user.User;
 import com.fieldex.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +41,12 @@ public class OrderStateMachineService {
     private final OrderItemAllocationRepository allocationRepository;
     private final EventPublisher eventPublisher;
     private final CustomsClearanceRepository customsClearanceRepository;
+
+    @Autowired(required = false)
+    private FruitVarietyRepository fruitVarietyRepository;
+
+    @Autowired(required = false)
+    private AuditLogService auditLogService;
 
     private static final Map<OrderStatus, Set<OrderStatus>> VALID_TRANSITIONS = new EnumMap<>(OrderStatus.class);
 
@@ -93,6 +103,15 @@ public class OrderStateMachineService {
         historyRepository.save(history);
 
         executePostConditions(order, targetStatus);
+
+        if (auditLogService != null) {
+            try {
+                auditLogService.logEvent("ORDER_TRANSITION", "ORDER", order.getOrderNumber(),
+                        String.format("Order %s transitioned %s -> %s (%s)", order.getOrderNumber(), currentStatus, targetStatus,
+                                notes != null ? notes : "Operations update"));
+            } catch (Exception ignored) {
+            }
+        }
 
         return order;
     }
@@ -174,30 +193,63 @@ public class OrderStateMachineService {
     }
 
     private void reserveInventory(Order order) {
+        if (order.getItems() == null) return;
         for (OrderItem item : order.getItems()) {
-            List<InventoryAllocationResult> results = inventoryService.allocateFIFO(
-                    item.getFruit().getId(), 
-                    item.getVariety().getId(), 
-                    item.getQuantity(), 
-                    "Order " + order.getOrderNumber(), 
-                    order.getId().toString()
-            );
-            
-            for (InventoryAllocationResult result : results) {
-                com.fieldex.batch.FruitBatch batchProxy = new com.fieldex.batch.FruitBatch();
-                batchProxy.setId(result.getBatchId());
+            try {
+                List<InventoryAllocationResult> results = inventoryService.allocateFIFO(
+                        item.getFruit().getId(),
+                        item.getVariety().getId(),
+                        item.getQuantity(),
+                        "Order " + order.getOrderNumber(),
+                        order.getId().toString()
+                );
 
-                OrderItemAllocation allocation = OrderItemAllocation.builder()
-                        .orderItem(item)
-                        .fruitBatch(batchProxy)
-                        .quantity(result.getAllocatedQuantity())
-                        .build();
-                allocation.setActive(true);
-                allocationRepository.save(allocation);
-                
-                item.getAllocations().add(allocation);
+                for (InventoryAllocationResult result : results) {
+                    com.fieldex.batch.FruitBatch batchProxy = new com.fieldex.batch.FruitBatch();
+                    batchProxy.setId(result.getBatchId());
+
+                    OrderItemAllocation allocation = OrderItemAllocation.builder()
+                            .orderItem(item)
+                            .fruitBatch(batchProxy)
+                            .quantity(result.getAllocatedQuantity())
+                            .build();
+                    allocation.setActive(true);
+                    allocationRepository.save(allocation);
+
+                    item.getAllocations().add(allocation);
+                }
+
+                // Sync remaining commercial catalog available quantity
+                decrementCatalogVarietyStock(item);
+            } catch (IllegalStateException ex) {
+                // Allow reservation against admin/manager catalog stock if physical warehouse batch was not manually pre-created
+                if (!decrementCatalogVarietyStockIfAvailable(item)) {
+                    throw ex;
+                }
             }
         }
+    }
+
+    private void decrementCatalogVarietyStock(OrderItem item) {
+        if (fruitVarietyRepository == null || item.getVariety() == null || item.getQuantity() == null) return;
+        FruitVariety variety = fruitVarietyRepository.findById(item.getVariety().getId()).orElse(null);
+        if (variety != null && variety.getAvailableQuantity() != null) {
+            double remaining = Math.max(0.0, variety.getAvailableQuantity() - item.getQuantity().doubleValue());
+            variety.setAvailableQuantity(remaining);
+            fruitVarietyRepository.save(variety);
+        }
+    }
+
+    private boolean decrementCatalogVarietyStockIfAvailable(OrderItem item) {
+        if (fruitVarietyRepository == null || item.getVariety() == null || item.getQuantity() == null) return false;
+        FruitVariety variety = fruitVarietyRepository.findById(item.getVariety().getId()).orElse(null);
+        if (variety != null && variety.getAvailableQuantity() != null
+                && variety.getAvailableQuantity() >= item.getQuantity().doubleValue()) {
+            variety.setAvailableQuantity(variety.getAvailableQuantity() - item.getQuantity().doubleValue());
+            fruitVarietyRepository.save(variety);
+            return true;
+        }
+        return false;
     }
 
     private void releaseInventory(Order order) {

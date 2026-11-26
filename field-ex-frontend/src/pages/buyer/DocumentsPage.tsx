@@ -12,16 +12,18 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDocuments();
+    fetchDocuments(false);
+    const timer = setInterval(() => fetchDocuments(true), 4000);
+    return () => clearInterval(timer);
   }, []);
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await buyerApi.getMyDocuments();
       setDocuments(Array.isArray(data) ? data : data?.content || []);
     } catch (err) {
-      console.error('Failed to fetch trade documents', err);
+      if (!silent) console.error('Failed to fetch trade documents', err);
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ export default function DocumentsPage() {
             Cryptographically certified export documentation, phyto-inspections, and ocean shipping manifests.
           </p>
         </div>
-        <Button variant="outline" onClick={fetchDocuments} size="sm">
+        <Button variant="outline" onClick={() => fetchDocuments(false)} size="sm">
           Refresh Documents
         </Button>
       </div>

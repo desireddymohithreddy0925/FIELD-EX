@@ -74,25 +74,45 @@ public class CalendarService {
             // 2. Status History Transitions
             List<OrderStatusHistory> histories = historyRepository.findByOrderIdOrderByCreatedAtAsc(order.getId());
             for (OrderStatusHistory h : histories) {
+                // Initial QUOTE_ACCEPTED state is already covered by ORDER_PLACED milestone
+                if (h.getStatus() == OrderStatus.QUOTE_ACCEPTED) {
+                    continue;
+                }
+
                 String eventType;
                 String title;
                 String badgeColor;
 
                 switch (h.getStatus()) {
+                    case PAYMENT_PENDING -> {
+                        eventType = "PAYMENT_PENDING";
+                        title = "Payment Awaiting Verification: " + orderNum;
+                        badgeColor = "amber";
+                    }
                     case PAID -> {
                         eventType = "PAYMENT_CONFIRMED";
                         title = "Payment Confirmed: " + orderNum;
                         badgeColor = "emerald";
                     }
+                    case PROCESSING -> {
+                        eventType = "ORDER_ACCEPTED";
+                        title = "Order Accepted & Processing: " + orderNum;
+                        badgeColor = "purple";
+                    }
                     case PACKED -> {
                         eventType = "PACKING_COMPLETE";
                         title = "Packhouse Sorting Done: " + orderNum;
-                        badgeColor = "purple";
+                        badgeColor = "indigo";
                     }
                     case DISPATCHED -> {
                         eventType = "SHIPMENT_DISPATCHED";
-                        title = "Dispatched to Port: " + orderNum;
+                        title = "Dispatched to Export Port: " + orderNum;
                         badgeColor = "indigo";
+                    }
+                    case IN_TRANSIT -> {
+                        eventType = "IN_TRANSIT";
+                        title = "Vessel Ocean Transit: " + orderNum;
+                        badgeColor = "cyan";
                     }
                     case CUSTOMS -> {
                         eventType = "CUSTOMS_CLEARED";
@@ -104,9 +124,14 @@ public class CalendarService {
                         title = "Consignee Received: " + orderNum;
                         badgeColor = "emerald";
                     }
+                    case CANCELLED -> {
+                        eventType = "ORDER_CANCELLED";
+                        title = "Order Rejected / Cancelled: " + orderNum;
+                        badgeColor = "rose";
+                    }
                     default -> {
                         eventType = "STATUS_" + h.getStatus().name();
-                        title = "Status: " + h.getStatus().name() + " (" + orderNum + ")";
+                        title = h.getStatus().name().replace('_', ' ') + ": " + orderNum;
                         badgeColor = "gray";
                     }
                 }

@@ -14,17 +14,19 @@ export default function QuotationsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   useEffect(() => {
-    fetchQuotations();
+    fetchQuotations(false);
+    const timer = setInterval(() => fetchQuotations(true), 4000);
+    return () => clearInterval(timer);
   }, [statusFilter]);
 
-  const fetchQuotations = async () => {
+  const fetchQuotations = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const statusParam = statusFilter === 'ALL' ? undefined : statusFilter;
       const data = await buyerApi.getQuotations(0, 50, statusParam);
       setQuotations(data?.content || (Array.isArray(data) ? data : []));
     } catch (err) {
-      console.error(err);
+      if (!silent) console.error(err);
     } finally {
       setLoading(false);
     }

@@ -2,21 +2,42 @@ package com.fieldex.config;
 
 import com.fieldex.audit.AuditLog;
 import com.fieldex.audit.AuditLogRepository;
+import com.fieldex.batch.BatchStatus;
+import com.fieldex.batch.FruitBatch;
+import com.fieldex.batch.FruitBatchRepository;
 import com.fieldex.buyer.Buyer;
 import com.fieldex.buyer.BuyerRepository;
 import com.fieldex.fruit.Fruit;
 import com.fieldex.fruit.FruitRepository;
 import com.fieldex.fruit.FruitVariety;
 import com.fieldex.fruit.FruitVarietyRepository;
+import com.fieldex.inventory.Inventory;
+import com.fieldex.inventory.InventoryRepository;
 import com.fieldex.order.Order;
 import com.fieldex.order.OrderItem;
 import com.fieldex.order.OrderRepository;
 import com.fieldex.order.OrderStatus;
 import com.fieldex.order.OrderStatusHistory;
 import com.fieldex.order.OrderStatusHistoryRepository;
+import com.fieldex.procurement.PaymentStatus;
+import com.fieldex.procurement.ProcurementItem;
+import com.fieldex.procurement.ProcurementItemRepository;
+import com.fieldex.procurement.ProcurementOrder;
+import com.fieldex.procurement.ProcurementOrderRepository;
+import com.fieldex.procurement.ProcurementStatus;
+import com.fieldex.quality.InspectionStatus;
+import com.fieldex.quality.QualityGrade;
+import com.fieldex.quality.QualityInspection;
+import com.fieldex.quality.QualityInspectionRepository;
 import com.fieldex.quotation.Quotation;
+import com.fieldex.quotation.QuotationItem;
 import com.fieldex.quotation.QuotationRepository;
 import com.fieldex.quotation.QuotationStatus;
+import com.fieldex.shipment.Shipment;
+import com.fieldex.shipment.ShipmentRepository;
+import com.fieldex.shipment.ShipmentStatus;
+import com.fieldex.supplier.Supplier;
+import com.fieldex.supplier.SupplierRepository;
 import com.fieldex.user.Role;
 import com.fieldex.user.User;
 import com.fieldex.user.UserRepository;
@@ -34,6 +55,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,6 +74,13 @@ public class DataInitializer implements CommandLineRunner {
     private final QuotationRepository quotationRepository;
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final AuditLogRepository auditLogRepository;
+    private final SupplierRepository supplierRepository;
+    private final ProcurementOrderRepository procurementOrderRepository;
+    private final ProcurementItemRepository procurementItemRepository;
+    private final QualityInspectionRepository qualityInspectionRepository;
+    private final FruitBatchRepository fruitBatchRepository;
+    private final InventoryRepository inventoryRepository;
+    private final ShipmentRepository shipmentRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -60,7 +89,10 @@ public class DataInitializer implements CommandLineRunner {
         seedUsers();
         seedProduceCatalog();
         seedWarehouses();
+        seedSuppliersAndInventory();
         seedOrders();
+        seedPendingQuotations();
+        seedShipments();
         seedAuditLogs();
     }
 
@@ -370,35 +402,270 @@ public class DataInitializer implements CommandLineRunner {
                 .lineTotal(new BigDecimal("18000.00"))
                 .build());
         ord3.setActive(true);
+        ord3.setCreatedAt(Instant.now().minus(3, ChronoUnit.DAYS));
+        ord3.setUpdatedAt(Instant.now().minus(1, ChronoUnit.DAYS));
         ord3 = orderRepository.save(ord3);
 
-        orderStatusHistoryRepository.save(OrderStatusHistory.builder()
+        OrderStatusHistory h3_1 = OrderStatusHistory.builder()
                 .order(ord3)
                 .status(OrderStatus.QUOTE_ACCEPTED)
                 .notes("Order created from quotation")
-                .build());
-        orderStatusHistoryRepository.save(OrderStatusHistory.builder()
+                .build();
+        h3_1.setCreatedAt(Instant.now().minus(3, ChronoUnit.DAYS));
+        h3_1.setUpdatedAt(Instant.now().minus(3, ChronoUnit.DAYS));
+        orderStatusHistoryRepository.save(h3_1);
+
+        OrderStatusHistory h3_2 = OrderStatusHistory.builder()
                 .order(ord3)
                 .status(OrderStatus.PROCESSING)
                 .notes("Order accepted by Operations Admin")
-                .build());
-        orderStatusHistoryRepository.save(OrderStatusHistory.builder()
+                .build();
+        h3_2.setCreatedAt(Instant.now().minus(2, ChronoUnit.DAYS));
+        h3_2.setUpdatedAt(Instant.now().minus(2, ChronoUnit.DAYS));
+        orderStatusHistoryRepository.save(h3_2);
+
+        OrderStatusHistory h3_3 = OrderStatusHistory.builder()
                 .order(ord3)
                 .status(OrderStatus.PACKED)
                 .notes("Packed in standard 18.14kg reefer cartons")
-                .build());
-        orderStatusHistoryRepository.save(OrderStatusHistory.builder()
+                .build();
+        h3_3.setCreatedAt(Instant.now().minus(36, ChronoUnit.HOURS));
+        h3_3.setUpdatedAt(Instant.now().minus(36, ChronoUnit.HOURS));
+        orderStatusHistoryRepository.save(h3_3);
+
+        OrderStatusHistory h3_4 = OrderStatusHistory.builder()
                 .order(ord3)
                 .status(OrderStatus.DISPATCHED)
                 .notes("Dispatched to Gateway Cold Hub JNPT")
-                .build());
-        orderStatusHistoryRepository.save(OrderStatusHistory.builder()
+                .build();
+        h3_4.setCreatedAt(Instant.now().minus(24, ChronoUnit.HOURS));
+        h3_4.setUpdatedAt(Instant.now().minus(24, ChronoUnit.HOURS));
+        orderStatusHistoryRepository.save(h3_4);
+
+        OrderStatusHistory h3_5 = OrderStatusHistory.builder()
                 .order(ord3)
                 .status(OrderStatus.IN_TRANSIT)
                 .notes("Ocean transit on vessel CMA CGM TITAN; container temp nominal at +13.2°C")
-                .build());
+                .build();
+        h3_5.setCreatedAt(Instant.now().minus(12, ChronoUnit.HOURS));
+        h3_5.setUpdatedAt(Instant.now().minus(12, ChronoUnit.HOURS));
+        orderStatusHistoryRepository.save(h3_5);
 
         log.info("Seeded live commercial orders in QUOTE_ACCEPTED, PROCESSING, and IN_TRANSIT states.");
+    }
+
+    private void seedSuppliersAndInventory() {
+        if (inventoryRepository.count() > 0) {
+            return;
+        }
+
+        Warehouse warehouse = warehouseRepository.findAll().stream().findFirst().orElse(null);
+        User inspector = userRepository.findByEmail("qc@field-ex.com")
+                .or(() -> userRepository.findByEmail("admin@field-ex.com"))
+                .orElse(null);
+        List<FruitVariety> varieties = fruitVarietyRepository.findAll();
+        if (warehouse == null || inspector == null || varieties.isEmpty()) {
+            return;
+        }
+
+        Supplier supplier = supplierRepository.findBySupplierCode("SUP-MH-01").orElseGet(() -> {
+            Supplier s = Supplier.builder()
+                    .supplierCode("SUP-MH-01")
+                    .name("Sahyadri Agro Growers Collective")
+                    .contactPerson("Rajesh Deshmukh")
+                    .phone("+91 98220 11223")
+                    .contactEmail("growers@sahyadriexports.in")
+                    .region("Maharashtra")
+                    .farmLocation("Ratnagiri & Nashik Cluster")
+                    .build();
+            s.setActive(true);
+            return supplierRepository.save(s);
+        });
+
+        ProcurementOrder po = procurementOrderRepository.save(ProcurementOrder.builder()
+                .orderNumber("PO-2026-001")
+                .supplier(supplier)
+                .warehouse(warehouse)
+                .purchaseDate(Instant.now().minus(5, ChronoUnit.DAYS))
+                .harvestDate(Instant.now().minus(3, ChronoUnit.DAYS))
+                .status(ProcurementStatus.RECEIVED)
+                .paymentStatus(PaymentStatus.COMPLETED)
+                .totalAmount(new BigDecimal("185000.00"))
+                .currency("USD")
+                .notes("Peak export harvest procurement")
+                .build());
+
+        int batchSeq = 1;
+        for (FruitVariety v : varieties) {
+            BigDecimal qty = BigDecimal.valueOf(v.getAvailableQuantity() != null ? v.getAvailableQuantity() : 25000.0);
+            BigDecimal price = v.getPricePerKg() != null ? v.getPricePerKg() : new BigDecimal("2.50");
+
+            ProcurementItem pItem = procurementItemRepository.save(ProcurementItem.builder()
+                    .procurementOrder(po)
+                    .fruit(v.getFruit())
+                    .variety(v)
+                    .quantity(qty)
+                    .unitPrice(price)
+                    .totalPrice(price.multiply(qty))
+                    .build());
+
+            QualityInspection insp = QualityInspection.builder()
+                    .inspectionNumber("QC-2026-0" + batchSeq)
+                    .procurementItem(pItem)
+                    .inspector(inspector)
+                    .inspectedQuantity(qty)
+                    .acceptedQuantity(qty)
+                    .rejectedQuantity(BigDecimal.ZERO)
+                    .grade(QualityGrade.GRADE_A)
+                    .size(v.getSizeProfile() != null ? v.getSizeProfile() : "Export Standard")
+                    .color(v.getColorProfile() != null ? v.getColorProfile() : "Natural Mature")
+                    .inspectionDate(Instant.now().minus(2, ChronoUnit.DAYS))
+                    .status(InspectionStatus.PASSED)
+                    .notes("GlobalGAP & MRL lab certified pass for " + v.getName())
+                    .build();
+            insp.setActive(true);
+            insp = qualityInspectionRepository.save(insp);
+
+            FruitBatch batch = FruitBatch.builder()
+                    .batchNumber("B-2026-0" + batchSeq)
+                    .procurementItem(pItem)
+                    .supplier(supplier)
+                    .fruit(v.getFruit())
+                    .variety(v)
+                    .qualityInspection(insp)
+                    .qualityGrade(QualityGrade.GRADE_A)
+                    .approvedQuantity(qty)
+                    .warehouse(warehouse)
+                    .harvestDate(Instant.now().minus(3, ChronoUnit.DAYS))
+                    .packingDate(Instant.now().minus(2, ChronoUnit.DAYS))
+                    .shelfLifeDays(v.getShelfLifeDays() != null ? v.getShelfLifeDays() : 21)
+                    .expirationDate(Instant.now().plus(v.getShelfLifeDays() != null ? v.getShelfLifeDays() : 21, ChronoUnit.DAYS))
+                    .status(BatchStatus.IN_COLD_STORAGE)
+                    .build();
+            batch.setActive(true);
+            batch = fruitBatchRepository.save(batch);
+
+            Inventory inv = Inventory.builder()
+                    .batch(batch)
+                    .warehouse(warehouse)
+                    .totalQuantity(qty)
+                    .availableQuantity(qty)
+                    .reservedQuantity(BigDecimal.ZERO)
+                    .packedQuantity(BigDecimal.ZERO)
+                    .dispatchedQuantity(BigDecimal.ZERO)
+                    .damagedQuantity(BigDecimal.ZERO)
+                    .expiredQuantity(BigDecimal.ZERO)
+                    .build();
+            inv.setActive(true);
+            inventoryRepository.save(inv);
+            batchSeq++;
+        }
+
+        // Also seed 1 pending QC inspection for live lab queue metrics
+        FruitVariety firstVar = varieties.get(0);
+        ProcurementItem pendingItem = procurementItemRepository.save(ProcurementItem.builder()
+                .procurementOrder(po)
+                .fruit(firstVar.getFruit())
+                .variety(firstVar)
+                .quantity(new BigDecimal("3500.00"))
+                .unitPrice(firstVar.getPricePerKg() != null ? firstVar.getPricePerKg() : new BigDecimal("4.80"))
+                .totalPrice(new BigDecimal("16800.00"))
+                .build());
+        QualityInspection pendingInsp = QualityInspection.builder()
+                .inspectionNumber("QC-2026-PENDING")
+                .procurementItem(pendingItem)
+                .inspector(inspector)
+                .inspectedQuantity(new BigDecimal("3500.00"))
+                .acceptedQuantity(BigDecimal.ZERO)
+                .rejectedQuantity(BigDecimal.ZERO)
+                .grade(QualityGrade.PREMIUM)
+                .inspectionDate(Instant.now())
+                .status(InspectionStatus.PENDING)
+                .notes("Incoming farm lot awaiting Brix refraction check")
+                .build();
+        pendingInsp.setActive(true);
+        qualityInspectionRepository.save(pendingInsp);
+
+        log.info("Seeded verified supplier, QC inspections, fruit batches, and warehouse inventories.");
+    }
+
+    private void seedPendingQuotations() {
+        boolean hasRequestedQuote = quotationRepository.findAll().stream()
+                .anyMatch(q -> q.getStatus() == QuotationStatus.REQUESTED);
+        if (hasRequestedQuote) {
+            return;
+        }
+
+        Buyer buyer = buyerRepository.findByContactEmail("buyer@field-ex.com")
+                .or(() -> buyerRepository.findAll().stream().findFirst())
+                .orElse(null);
+        List<FruitVariety> varieties = fruitVarietyRepository.findAll();
+        if (buyer == null || varieties.isEmpty()) {
+            return;
+        }
+
+        FruitVariety alphonso = varieties.stream().filter(v -> v.getName().contains("Alphonso")).findFirst().orElse(varieties.get(0));
+        FruitVariety kesar = varieties.stream().filter(v -> v.getName().contains("Kesar")).findFirst().orElse(alphonso);
+
+        BigDecimal q1Qty = new BigDecimal("2500.00");
+        BigDecimal q1Price = alphonso.getPricePerKg() != null ? alphonso.getPricePerKg() : new BigDecimal("4.80");
+        BigDecimal q2Qty = new BigDecimal("1500.00");
+        BigDecimal q2Price = kesar.getPricePerKg() != null ? kesar.getPricePerKg() : new BigDecimal("3.75");
+
+        BigDecimal totalAmt = q1Qty.multiply(q1Price).add(q2Qty.multiply(q2Price));
+
+        Quotation requestedQuote = Quotation.builder()
+                .buyer(buyer)
+                .status(QuotationStatus.REQUESTED)
+                .currencyCode("USD")
+                .totalAmount(totalAmt)
+                .build();
+        requestedQuote.setActive(true);
+
+        requestedQuote.addItem(QuotationItem.builder()
+                .fruit(alphonso.getFruit())
+                .variety(alphonso)
+                .quantity(q1Qty)
+                .unitPrice(q1Price)
+                .lineTotal(q1Qty.multiply(q1Price))
+                .build());
+        if (!kesar.getId().equals(alphonso.getId())) {
+            requestedQuote.addItem(QuotationItem.builder()
+                    .fruit(kesar.getFruit())
+                    .variety(kesar)
+                    .quantity(q2Qty)
+                    .unitPrice(q2Price)
+                    .lineTotal(q2Qty.multiply(q2Price))
+                    .build());
+        }
+
+        quotationRepository.save(requestedQuote);
+        log.info("Seeded live pending buyer quotation request for Admin/Manager present amount review.");
+    }
+
+    private void seedShipments() {
+        if (shipmentRepository.count() > 0) {
+            return;
+        }
+
+        Order inTransitOrder = orderRepository.findByOrderNumber("ORD-2026-1003").orElse(null);
+        if (inTransitOrder != null) {
+            Shipment s1 = Shipment.builder()
+                    .order(inTransitOrder)
+                    .status(ShipmentStatus.IN_TRANSIT)
+                    .containerNumber("CMAU4829104")
+                    .shippingCompany("CMA CGM")
+                    .trackingNumber("CMA-TITAN-1003")
+                    .originPort("JNPT Port, Mumbai")
+                    .destinationPort("Port of Rotterdam")
+                    .destinationCountry("NL")
+                    .shipmentDate(OffsetDateTime.now().minusDays(1))
+                    .expectedDelivery(OffsetDateTime.now().plusDays(4))
+                    .build();
+            s1.setActive(true);
+            shipmentRepository.save(s1);
+            log.info("Seeded live vessel transit shipment for ORD-2026-1003.");
+        }
     }
 
     private void seedAuditLogs() {

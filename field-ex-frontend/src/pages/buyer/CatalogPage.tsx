@@ -16,16 +16,18 @@ export default function CatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   useEffect(() => {
-    fetchCatalog();
+    fetchCatalog(false);
+    const timer = setInterval(() => fetchCatalog(true), 4000);
+    return () => clearInterval(timer);
   }, []);
 
-  const fetchCatalog = async () => {
+  const fetchCatalog = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await buyerApi.getFruits({ size: 100 });
       setFruits(data?.content || (Array.isArray(data) ? data : []));
     } catch (err) {
-      console.error("Failed to load catalog:", err);
+      if (!silent) console.error("Failed to load catalog:", err);
     } finally {
       setLoading(false);
     }
@@ -51,13 +53,19 @@ export default function CatalogPage() {
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 rounded-2xl bg-card border border-border shadow-soft">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent text-[11px] font-semibold text-primary mb-2">
-            <Sprout className="w-3.5 h-3.5 text-tertiary" />
-            <span>APEDA & GlobalGAP Certified Indian Agro-Exports</span>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent text-[11px] font-semibold text-primary">
+              <Sprout className="w-3.5 h-3.5 text-tertiary" />
+              <span>APEDA & GlobalGAP Certified Indian Agro-Exports</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 text-[11px] font-semibold border border-emerald-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Live Prices & Stock</span>
+            </div>
           </div>
           <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-foreground">Produce Catalog</h2>
           <p className="text-muted-foreground text-sm mt-0.5">
-            Export-grade fresh fruits directly aggregated from verified growers with cold-chain provenance.
+            Export-grade fresh fruits with real-time fixed prices & stock set by FIELD-EX management.
           </p>
         </div>
 
@@ -172,10 +180,10 @@ export default function CatalogPage() {
                     </div>
 
                     {varieties.length > 0 && (
-                      <div className="mt-3 pt-2 flex flex-wrap gap-1">
+                      <div className="mt-3 pt-2 flex flex-wrap gap-1.5">
                         {varieties.slice(0, 3).map((v: any) => (
-                          <span key={v.id} className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border">
-                            {v.name}
+                          <span key={v.id} className="px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-foreground border border-border">
+                            {v.name}{v.pricePerKg != null ? ` • $${Number(v.pricePerKg).toFixed(2)}/kg` : ''}
                           </span>
                         ))}
                         {varieties.length > 3 && (
@@ -189,9 +197,15 @@ export default function CatalogPage() {
                 </div>
 
                 <div className="px-5 pb-4 pt-2 flex items-center justify-between border-t border-border/60 text-xs">
-                  <span className="text-muted-foreground font-medium flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Pre-inspected
-                  </span>
+                  {varieties.some((v: any) => v.pricePerKg != null) ? (
+                    <span className="font-mono font-bold text-primary">
+                      From ${Math.min(...varieties.filter((v: any) => v.pricePerKg != null).map((v: any) => Number(v.pricePerKg))).toFixed(2)}/kg
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground font-medium flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Pre-inspected
+                    </span>
+                  )}
                   <span className="font-semibold text-primary group-hover:text-secondary flex items-center gap-1 transition-colors">
                     Specifications <ArrowRight className="w-3.5 h-3.5" />
                   </span>

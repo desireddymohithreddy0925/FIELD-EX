@@ -590,6 +590,7 @@ const adminNav = [
   { name: 'Inventory', path: '/admin/inventory', icon: PackageSearch },
   { name: 'Cold Chain', path: '/admin/cold-chain', icon: Thermometer },
   { name: 'Orders & Audit', path: '/admin/orders', icon: FileText },
+  { name: 'Quotations & Pricing', path: '/admin/quotations', icon: FileText },
   { name: 'Packaging', path: '/admin/packaging', icon: Archive },
   { name: 'Documents', path: '/admin/documents', icon: BookOpen },
   { name: 'Shipments', path: '/admin/shipments', icon: Ship },

@@ -1,10 +1,12 @@
 package com.fieldex.buyer.catalog;
 
+import com.fieldex.audit.AuditLogService;
 import com.fieldex.fruit.Fruit;
 import com.fieldex.fruit.FruitRepository;
 import com.fieldex.fruit.FruitVariety;
 import com.fieldex.fruit.FruitVarietyRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -22,6 +24,9 @@ public class CatalogService {
 
     private final FruitRepository fruitRepository;
     private final FruitVarietyRepository varietyRepository;
+
+    @Autowired(required = false)
+    private AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
     public Page<CatalogFruitDto> getAvailableFruits(com.fieldex.fruit.dto.FruitFilter filter, Pageable pageable) {
@@ -97,12 +102,14 @@ public class CatalogService {
                 .description(request.getDescription())
                 .pricePerKg(request.getPricePerKg() != null ? request.getPricePerKg() : java.math.BigDecimal.valueOf(2.50))
                 .currency(request.getCurrency() != null ? request.getCurrency() : "USD")
-                .availableQuantity(request.getAvailableQuantity() != null ? request.getAvailableQuantity() : 100.0)
-                .minOrderQuantity(request.getMinOrderQuantity() != null ? request.getMinOrderQuantity() : 1.0)
-                .unit(request.getUnit() != null ? request.getUnit() : "MT")
+                .availableQuantity(request.getAvailableQuantity() != null ? request.getAvailableQuantity() : 10000.0)
+                .minOrderQuantity(request.getMinOrderQuantity() != null ? request.getMinOrderQuantity() : 500.0)
+                .unit(request.getUnit() != null ? request.getUnit() : "KG")
                 .build();
         variety.setActive(request.getActive() != null ? request.getActive() : true);
         FruitVariety saved = varietyRepository.save(variety);
+        logAudit("VARIETY_CREATED", saved.getName(), String.format("Added variety %s (%s %s/kg, Stock: %s %s)",
+                saved.getName(), saved.getCurrency(), saved.getPricePerKg(), saved.getAvailableQuantity(), saved.getUnit()));
         return mapVarietyToDto(saved);
     }
 
@@ -126,6 +133,8 @@ public class CatalogService {
         if (request.getUnit() != null) variety.setUnit(request.getUnit());
         if (request.getActive() != null) variety.setActive(request.getActive());
         FruitVariety updated = varietyRepository.save(variety);
+        logAudit("VARIETY_UPDATED", updated.getName(), String.format("Updated specs/catalog for %s (Grade: %s, Brix: %s)",
+                updated.getName(), updated.getGrade(), updated.getBrixLevel()));
         return mapVarietyToDto(updated);
     }
 
@@ -139,7 +148,18 @@ public class CatalogService {
         if (request.getMinOrderQuantity() != null) variety.setMinOrderQuantity(request.getMinOrderQuantity());
         if (request.getUnit() != null) variety.setUnit(request.getUnit());
         FruitVariety updated = varietyRepository.save(variety);
+        logAudit("PRICE_UPDATE", updated.getName(), String.format("Fixed price %s %s/kg | Available Stock: %s %s | MOQ: %s",
+                updated.getCurrency(), updated.getPricePerKg(), updated.getAvailableQuantity(), updated.getUnit(), updated.getMinOrderQuantity()));
         return mapVarietyToDto(updated);
+    }
+
+    private void logAudit(String action, String resourceId, String metadata) {
+        if (auditLogService != null) {
+            try {
+                auditLogService.logEvent(action, "CATALOG", resourceId, metadata);
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     @Transactional
@@ -185,9 +205,9 @@ public class CatalogService {
                 .description(v.getDescription())
                 .pricePerKg(v.getPricePerKg())
                 .currency(v.getCurrency() != null ? v.getCurrency() : "USD")
-                .availableQuantity(v.getAvailableQuantity() != null ? v.getAvailableQuantity() : 100.0)
-                .minOrderQuantity(v.getMinOrderQuantity() != null ? v.getMinOrderQuantity() : 1.0)
-                .unit(v.getUnit() != null ? v.getUnit() : "MT")
+                .availableQuantity(v.getAvailableQuantity() != null ? v.getAvailableQuantity() : 10000.0)
+                .minOrderQuantity(v.getMinOrderQuantity() != null ? v.getMinOrderQuantity() : 500.0)
+                .unit(v.getUnit() != null ? v.getUnit() : "KG")
                 .active(v.isActive())
                 .build();
     }
