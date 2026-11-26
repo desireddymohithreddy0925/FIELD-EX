@@ -9,7 +9,7 @@ import { AppLayout } from "../components/layout/AppLayout"
 import alphonsoMangoImg from "../assets/produce/alphonso-mango.jpg"
 import thompsonGrapesImg from "../assets/produce/thompson-grapes.jpg"
 import cavendishBananasImg from "../assets/produce/cavendish-bananas.jpg"
-import bhagwaPomegranateImg from "../assets/produce/bhagwa-pomegranate.jpg"
+import appleImg from "../assets/produce/apple.jpg"
 
 // --- Public Layout (High-End Agro-Export Platform Landing) ---
 export function PublicLayout() {
@@ -109,44 +109,44 @@ export function PublicLayout() {
 
   const produceHighlights = [
     {
-      name: "Alphonso Mango",
+      name: "Mango",
       origin: "Ratnagiri, Maharashtra",
       grade: "Grade A Export",
       brix: "18-20° Brix",
       badge: "In Season",
       badgeClass: "bg-[#D4EBAB] text-[#253507]",
       image: alphonsoMangoImg,
-      imageAlt: "Ratnagiri Alphonso Mango export harvest",
+      imageAlt: "Ratnagiri Mango export harvest",
     },
     {
-      name: "Thompson Seedless Grapes",
+      name: "Grapes",
       origin: "Nashik, Maharashtra",
       grade: "Super Extra",
       brix: "16-18° Brix",
       badge: "GlobalGAP",
       badgeClass: "bg-[#1F4229] text-[#D2FBD7]",
       image: thompsonGrapesImg,
-      imageAlt: "Nashik Thompson Seedless Grapes export harvest",
+      imageAlt: "Nashik Grapes export harvest",
     },
     {
-      name: "Cavendish Bananas",
+      name: "Bananas",
       origin: "Jalgaon, Maharashtra",
       grade: "Premium Hand",
       brix: "High Caliber",
       badge: "Year-Round",
       badgeClass: "bg-[#D4EBAB] text-[#253507]",
       image: cavendishBananasImg,
-      imageAlt: "Jalgaon Cavendish Bananas export harvest",
+      imageAlt: "Jalgaon Bananas export harvest",
     },
     {
-      name: "Bhagwa Pomegranate",
-      origin: "Solapur, Maharashtra",
-      grade: "Export Extra",
-      brix: "Deep Red Arils",
+      name: "Apple",
+      origin: "Kinnaur & Shimla, Himachal Pradesh",
+      grade: "Grade A Export",
+      brix: "14-16° Brix",
       badge: "High Demand",
       badgeClass: "bg-[#FFDBC9] text-[#532200]",
-      image: bhagwaPomegranateImg,
-      imageAlt: "Solapur Bhagwa Pomegranate export harvest",
+      image: appleImg,
+      imageAlt: "Himachal Apple export harvest",
     },
   ]
 

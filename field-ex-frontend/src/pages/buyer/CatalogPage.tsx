@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { Loader2, Search, Sprout, ArrowRight, MapPin, Calendar, CheckCircle2, Filter } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
+import { getFruitMedia } from '../../utils/fruitMedia';
 
 export default function CatalogPage() {
   const navigate = useNavigate();
@@ -43,18 +44,7 @@ export default function CatalogPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const getFruitIcon = (name: string) => {
-    const lower = name.toLowerCase();
-    if (lower.includes('mango')) return '🥭';
-    if (lower.includes('grape')) return '🍇';
-    if (lower.includes('banana')) return '🍌';
-    if (lower.includes('pomegranate')) return '🍎';
-    if (lower.includes('orange') || lower.includes('mandarin') || lower.includes('citrus')) return '🍊';
-    if (lower.includes('papaya')) return '🍈';
-    if (lower.includes('guava')) return '🍐';
-    if (lower.includes('apple')) return '🍏';
-    return '🌱';
-  };
+
 
   return (
     <div className="space-y-8">
@@ -117,6 +107,7 @@ export default function CatalogPage() {
           {filteredFruits.map(fruit => {
             const varieties = fruit.varieties || [];
             const seasonStr = fruit.season || (Array.isArray(fruit.seasons) ? fruit.seasons.join(', ') : 'Year-round');
+            const media = getFruitMedia(fruit.name);
 
             return (
               <Card 
@@ -125,14 +116,26 @@ export default function CatalogPage() {
                 onClick={() => navigate(`/buyer/catalog/${fruit.id}`)}
               >
                 <div>
-                  <div className="aspect-[4/3] bg-gradient-to-br from-agro-sand/80 to-agro-linen/60 flex items-center justify-center p-6 relative border-b border-border/60">
-                    <span className="text-6xl drop-shadow-sm group-hover:scale-110 transition-transform duration-200">
-                      {getFruitIcon(fruit.name)}
-                    </span>
+                  <div className="aspect-[4/3] relative overflow-hidden bg-muted border-b border-border/60">
+                    <img
+                      src={media.image}
+                      alt={media.alt}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20 pointer-events-none" />
                     <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                      <Badge variant="olive" className="text-[10px] font-semibold">
-                        Grade A Export
+                      <Badge variant="olive" className="text-[10px] font-semibold bg-black/60 text-white backdrop-blur-sm border-white/20">
+                        {media.grade || 'Grade A Export'}
                       </Badge>
+                    </div>
+                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px] text-white">
+                      <span className="font-semibold bg-black/55 px-2 py-0.5 rounded backdrop-blur-sm">
+                        {fruit.origin ? fruit.origin.split(',')[0] : media.origin.split(',')[0]}
+                      </span>
+                      <span className="font-semibold bg-primary/90 text-primary-foreground px-2 py-0.5 rounded backdrop-blur-sm text-[10px]">
+                        {media.highlight}
+                      </span>
                     </div>
                   </div>
 
