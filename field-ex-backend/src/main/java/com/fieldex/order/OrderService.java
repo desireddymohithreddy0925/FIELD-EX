@@ -116,6 +116,7 @@ public class OrderService {
         return getAllOrders(filter, pageable);
     }
 
+    @Transactional(readOnly = true)
     public com.fieldex.order.dto.OrderDto getOrderById(UUID orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found"));
